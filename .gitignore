@@ -1,0 +1,15 @@
+#ignore everything besides .py files
+
+# *
+
+# !*.py
+# !./YOLO_code
+# !./meetings/*.py
+# !./AGAR_code
+
+*.mp3
+*.jpg
+*.json
+*.txt
+*.png
+*.md
