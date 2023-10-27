@@ -1,12 +1,11 @@
 
 # 03CPR Bacteria Picking Robot Software
-
-Developed by: William Culhane, Sarah Dolan, and John Fike
+*Developed by: (William Culhane)[https://wculhane.com/] , Sarah Dolan, and John Fike*
 
 ## Table of Contents
 - [Description](#description)
-- [YOLO Code](#features)
-- [Installation](#installation)
+- [YOLO](YOLO)
+- [Annotation Code](#installation)
 - [Usage](#usage)
 - [Contributing](#contributing)
 - [License](#license)
@@ -17,18 +16,21 @@ Developed by: William Culhane, Sarah Dolan, and John Fike
 Software developed for the bacteria Colony Picking Robot developed by ECE/ME capstone team 03CPR. This software is designed to automatically detect bacteria in petri dishes, and then sample them up using a robotic gantry system.
 
 
-## [YOLO Code](code/YOLO_code) 
+## YOLO
 Code for creating, testing, and [YOLOv8](https://docs.ultralytics.com/models/yolov8/#key-features) models
-* train.py: trains the model on the training set using data.yaml. Training datasets typically creating using roboflow.com
-* valid.py: tests the model on the validation set using data.yaml
-* predict.py: runs the model on images in a folder. Saves annotated images without label/confidence and saves a .txt file with label/confidence/bounding box coordinates
-* resize_and_greyscale.py: resizes to 640x640 and converts to greyscale
->    -folder 
-      >          \ -unprocessed (original images)
->            |-processed (resized and greyscale images)
-## Annotation Code 
-### Code for visualizing and refining YOLO annotations
+* [train.py](YOLO_code/train.py): trains the model on the training set using data.yaml. Training datasets typically creating using roboflow.com
+* [valid.py](YOLO_code/valid.py): tests the model on the validation set using data.yaml
+* [predict.py](YOLO_code/predict.py): runs the model on images in a folder. Saves annotated images without label/confidence and saves a .txt file with label/confidence/bounding box coordinates
+* [resize_and_greyscale.py](YOLO_code/resize_and_greyscale.py): resizes to 640x640 and converts to greyscale
+    |--folder 
+        |--unprocessed (original images)
+        |--processed (resized and greyscale images)
 
+
+## Annotation Code 
+Code for visualizing and refining YOLO annotations
+* [postprocessDiscrimination.py](annotation_code/postprocessDiscrimination.py): takes in a .txt file with label/confidence/bounding box coordinates and provides various options for determining if an annotation contains a doublet colony. 
+* [showpredictions.py](annotation_code/showpredictions.py): takes in .txt files in a folder, and displays the annotated images with label/confidence/bounding box coordinates. Currently provides various variables for filtering out annotations with potentially undesirable colonies. 
 
 ## Test Code
 * cannyEdge.py - creates and displays canny edge of an image. 
@@ -37,24 +39,11 @@ Code for creating, testing, and [YOLOv8](https://docs.ultralytics.com/models/yol
 * testSegmentBacteria.py - uses YOLO detection annotations to create segmentation annotations. Does not work very well either. 
 
 
-
-
 ## Models 
-
-agarV1.pt
-trained on AGAR dataset, 640px, 100epoch
-
-agar_v2.pt
-trained on AGAR dataset, 70% greyscale, 190epoch (1000 w/ 50 patence)
-
-norbert_v2.pt
-trained on harbinger, manually created norbert partitions
-
-agar_v3.pt
-trained on agar and norb, 100% greyscale, fixed dumb label thing
-1000 epoch w/ 50 patience 
-
+** only one model added because they are big ** 
 norbert_v3.pt
 CURRENTLY IN USE
 100% greyscale duplicate partition. 60% hue shift, 1000 epoch w/ 50 patience
 bounding box blur and noise, 2.5px
+
+(License: GNU GPLv3)[COPYING.md]
