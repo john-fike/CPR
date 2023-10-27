@@ -24,27 +24,9 @@ def distance(x0, y0, x1=.5, y1=.5):
     return (x_dist + y_dist) ** .5
 
 
-# Load your image
-# img = cv2.imread('./realTest_v1/processed/WIN_20231024_10_15_42_Pro.jpg')
-img = cv2.imread('./realTest_v1/unprocessed/WIN_20231024_10_19_20_Pro.jpg')
-
-# Check if the image was loaded successfully
-if img is None:
-    print("Error: Could not read image file")
-    exit()
-
-# Convert to grayscale
-gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-# Apply Gaussian blur to reduce noise
-# gray_blur = cv2.GaussianBlur(gray, (3, 3), 2)
-
-
-
-
 # -----------------------------------------------DISCRIMINATION VARIABLES----------------------
-img_width = img.shape[1]
-img_height = img.shape[0]
+IMAGE_PATH = './images/realTest_v1/unprocessed/WIN_20231024_10_19_20_Pro.jpg'
+ANNOTATION_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/detect/predict88/labels/WIN_20231024_10_19_20_Pro.txt'
 MIN_DISTANCE = .00
 MIN_CONFIDENCE = .0
 MARGIN = 1
@@ -63,13 +45,31 @@ doublet_eroded_binary_image_sum_avg = []
 doublet_very_eroded_binary_image_sum_avg = []
 doublet_very_very_eroded_binary_image_sum_avg = []
 
-doublets = [74,80,83,84,85,86,90,91,92,93,94,95,96,97]
+# Load your image
+# img = cv2.imread('./realTest_v1/processed/WIN_20231024_10_15_42_Pro.jpg')
+img = cv2.imread(IMAGE_PATH)
+
+# Check if the image was loaded successfully
+if img is None:
+    print("Error: Could not read image file")
+    exit()
+
+# Convert to grayscale
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+# Apply Gaussian blur to reduce noise
+gray_blur = cv2.GaussianBlur(gray, (3, 3), 2)
 
 
 
-with open ('C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/detect/predict88/labels/WIN_20231024_10_19_20_Pro.txt', 'r') as file:
+img_width = img.shape[1]
+img_height = img.shape[0]
+
+with open (ANNOTATION_PATH, 'r') as file:
     lines = file.readlines()
-    for i in range(71, len(lines)):
+    # for i in range(90, len(lines)):
+    i = 95
+    while True:
         line = lines[i]
         elements = line.split() #elements[] = [class, x, y, width, height, confidence]
 
@@ -157,6 +157,7 @@ with open ('C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/de
                     print(f"Average Column Position: {average_column_position}")
 
                     # check if i is within an array of ints
+                    doublets = [74,80,83,84,85,86,90,91,92,93,94,95,96,97]
                     if(i in doublets):
                         doublet_binary_image_sum_avg.append(binary_image_sum)
                         doublet_eroded_binary_image_sum_avg.append(eroded_binary_image_sum)
@@ -170,7 +171,7 @@ with open ('C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/de
 
 
                     # -----------------------------------------------DISPLAY----------------------
-                    display_time = 1500
+                    display_time = 15
 
                     resized_image = cv2.resize(cropped_image, (512, 512))
                     title = 'ORIGINAL ' + str(i)
@@ -202,7 +203,7 @@ with open ('C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/de
                     cv2.waitKey(display_time)
 
 
-
+                    cv2.waitKey(0)
                     cv2.destroyAllWindows()
 
 
