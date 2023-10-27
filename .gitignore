@@ -12,8 +12,5 @@
 *.json
 *.txt
 *.png
-*.md
 *.tif
 *.pt
-!README.md
-!.gitignore
