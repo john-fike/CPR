@@ -4,19 +4,18 @@
 
 ## Table of Contents
 - [Description](#description)
-- [YOLO](YOLO)
+- [YOLO](#YOLO)
 - [Annotation Code](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
+- [Test Code](#usage)
+- [Models](#contributing)
 - [License](#license)
-- [Contact](#contact)
 
 ## Description
 
 Software developed for the bacteria Colony Picking Robot developed by ECE/ME capstone team 03CPR. This software is designed to automatically detect bacteria in petri dishes, and then sample them up using a robotic gantry system.
 
 
-## YOLO
+## YOLO Code 
 Code for creating, testing, and [YOLOv8](https://docs.ultralytics.com/models/yolov8/#key-features) models
 * [train.py](YOLO_code/train.py): trains the model on the training set using data.yaml. Training datasets typically creating using roboflow.com
 * [valid.py](YOLO_code/valid.py): tests the model on the validation set using data.yaml
@@ -44,7 +43,8 @@ Code for visualizing and refining YOLO annotations
 ** only one model added because they are big ** 
 norbert_v3.pt
 CURRENTLY IN USE
-100% greyscale duplicate partition. 60% hue shift, 1000 epoch w/ 50 patience
-bounding box blur and noise, 2.5px
+Data augmentation steps:
+* 100% greyscale duplicate partition. 60% hue shift, 1000 epoch w/ 50 patience
+* bounding box blur and noise, 2.5px
 
 [License: GNU GPLv3](COPYING.md)
