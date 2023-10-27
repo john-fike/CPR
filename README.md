@@ -22,7 +22,8 @@ Code for creating, testing, and [YOLOv8](https://docs.ultralytics.com/models/yol
 * [valid.py](YOLO_code/valid.py): tests the model on the validation set using data.yaml
 * [predict.py](YOLO_code/predict.py): runs the model on images in a folder. Saves annotated images without label/confidence and saves a .txt file with label/confidence/bounding box coordinates
 * [resize_and_greyscale.py](YOLO_code/resize_and_greyscale.py): resizes to 640x640 and converts to greyscale
-    |--folder 
+
+   |--folder 
         |--unprocessed (original images)
         |--processed (resized and greyscale images)
 
