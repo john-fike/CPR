@@ -17,10 +17,10 @@ Software developed for the bacteria Colony Picking Robot developed by ECE/ME cap
 
 ## YOLO Code 
 Code for creating, testing, and [YOLOv8](https://docs.ultralytics.com/models/yolov8/#key-features) models
-* [train.py](YOLO_code/train.py): trains the model on the training set using data.yaml. Training datasets typically creating using roboflow.com
-* [valid.py](YOLO_code/valid.py): tests the model on the validation set using data.yaml
-* [predict.py](YOLO_code/predict.py): runs the model on images in a folder. Saves annotated images without label/confidence and saves a .txt file with label/confidence/bounding box coordinates
-* [resize_and_greyscale.py](YOLO_code/resize_and_greyscale.py): resizes to 640x640 and converts to greyscale
+* [train.py](code/YOLO_code/train.py): trains the model on the training set using data.yaml. Training datasets typically creating using roboflow.com
+* [valid.py](code/YOLO_code/valid.py): tests the model on the validation set using data.yaml
+* [predict.py](code/YOLO_code/predict.py): runs the model on images in a folder. Saves annotated images without label/confidence and saves a .txt file with label/confidence/bounding box coordinates
+* [resize_and_greyscale.py](code/YOLO_code/resize_and_greyscale.py): resizes to 640x640 and converts to greyscale
 
       |--folder 
            |--unprocessed (original images)
@@ -29,14 +29,14 @@ Code for creating, testing, and [YOLOv8](https://docs.ultralytics.com/models/yol
 
 ## Annotation Code 
 Code for visualizing and refining YOLO annotations
-* [postprocessDiscrimination.py](annotation_code/postprocessDiscrimination.py): takes in a .txt file with label/confidence/bounding box coordinates and provides various options for determining if an annotation contains a doublet colony. 
-* [showpredictions.py](annotation_code/showpredictions.py): takes in .txt files in a folder, and displays the annotated images with label/confidence/bounding box coordinates. Currently provides various variables for filtering out annotations with potentially undesirable colonies. 
+* [postprocessDiscrimination.py](code/annotation_code/postprocessDiscrimination.py): takes in a .txt file with label/confidence/bounding box coordinates and provides various options for determining if an annotation contains a doublet colony. 
+* [showpredictions.py](code/annotation_code/showpredictions.py): takes in .txt files in a folder, and displays the annotated images with label/confidence/bounding box coordinates. Currently provides various variables for filtering out annotations with potentially undesirable colonies. 
 
 ## Test Code
-* [cannyEdge.py](test_code/cannyEdge.py) - creates and displays canny edge of an image. 
-* [testErosion.py](test_code/testErosion.py) - creates and displays erosion of an image. 
-* [testMinima.py](test_code/testMinima.py) - creates and displays minima of an image. Just a slightly different application of erosion. Does not work very well. 
-* [testSegmentBacteria.py](test_code/testSegmentBacteria.py) - uses YOLO detection annotations to create segmentation annotations. Does not work very well either. 
+* [cannyEdge.py](code/test_code/cannyEdge.py) - creates and displays canny edge of an image. 
+* [testErosion.py](code/test_code/testErosion.py) - creates and displays erosion of an image. 
+* [testMinima.py](code/test_code/testMinima.py) - creates and displays minima of an image. Just a slightly different application of erosion. Does not work very well. 
+* [testSegmentBacteria.py](code/test_code/testSegmentBacteria.py) - uses YOLO detection annotations to create segmentation annotations. Does not work very well either. 
 
 
 ## Models 
