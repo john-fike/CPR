@@ -31,10 +31,14 @@ MIN_DISTANCE = .00
 MIN_CONFIDENCE = .0
 MARGIN = 1
 
-# -----------------------------------------------ANALSIS----------------------
+# -----------------------------------------------STATS----------------------
 yolo_found = 0
 found_circles = 0
 
+#images containing doublets
+doublets = [74,80,83,84,85,86,90,91,92,93,94,95,96,97]
+
+# intensity sums
 binary_image_sum_avg = []
 eroded_binary_image_sum_avg = []
 very_eroded_binary_image_sum_avg = []
@@ -44,6 +48,13 @@ doublet_binary_image_sum_avg = []
 doublet_eroded_binary_image_sum_avg = []
 doublet_very_eroded_binary_image_sum_avg = []
 doublet_very_very_eroded_binary_image_sum_avg = []
+
+# (x,y) pixel positions
+x_avg = []
+y_avg = []
+doublet_x_avg = []
+doublet_y_avg = []
+
 
 # Load your image
 # img = cv2.imread('./realTest_v1/processed/WIN_20231024_10_15_42_Pro.jpg')
@@ -67,9 +78,9 @@ img_height = img.shape[0]
 
 with open (ANNOTATION_PATH, 'r') as file:
     lines = file.readlines()
-    # for i in range(90, len(lines)):
-    i = 95
-    while True:
+    for i in range(len(lines)):
+    # i = 95
+    # while True:
         line = lines[i]
         elements = line.split() #elements[] = [class, x, y, width, height, confidence]
 
@@ -113,10 +124,8 @@ with open (ANNOTATION_PATH, 'r') as file:
                     very_eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=8)
                     very_very_eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=12)
 
-
-
                     # -----------------------------------------------DRAW CIRCLES----------------------
-                    circles = cv2.HoughCircles(gray_cropped_image, cv2.HOUGH_GRADIENT, dp=1, minDist= 10, param1=4, param2=10, minRadius=1, maxRadius=0)                    
+                    # circles = cv2.HoughCircles(gray_cropped_image, cv2.HOUGH_GRADIENT, dp=1, minDist= 10, param1=4, param2=10, minRadius=1, maxRadius=0)                    
                     # if circles is not None:
                     #     circles = np.uint16(np.around(circles))
                     #     for i in circles[0, :]:
@@ -137,6 +146,7 @@ with open (ANNOTATION_PATH, 'r') as file:
                     eroded_binary_image_sum = np.sum(eroded_binary_image)
                     very_eroded_binary_image_sum = np.sum(very_eroded_binary_image)
                     very_very_eroded_binary_image_sum = np.sum(very_very_eroded_binary_image)
+                    
                     #-----------------------------------------------AVERAGE (x,y) PIXEL POSITIONS----------------------
                     row_sums = np.sum(binary_image, axis=1)
                     column_sums = np.sum(binary_image, axis=0)
@@ -153,21 +163,25 @@ with open (ANNOTATION_PATH, 'r') as file:
                     average_row_position = np.dot(row_positions, row_sums) / total_row_sum
                     average_column_position = np.dot(column_positions, column_sums) / total_column_sum
 
-                    print(f"Average Row Position: {average_row_position}")
-                    print(f"Average Column Position: {average_column_position}")
 
+                    # -----------------------------------------------APPEND TO ARRAYS----------------------
                     # check if i is within an array of ints
-                    doublets = [74,80,83,84,85,86,90,91,92,93,94,95,96,97]
                     if(i in doublets):
                         doublet_binary_image_sum_avg.append(binary_image_sum)
                         doublet_eroded_binary_image_sum_avg.append(eroded_binary_image_sum)
                         doublet_very_eroded_binary_image_sum_avg.append(very_eroded_binary_image_sum)   
                         doublet_very_very_eroded_binary_image_sum_avg.append(very_very_eroded_binary_image_sum)
+
+                        doublet_x_avg.append(average_column_position)
+                        doublet_y_avg.append(average_row_position)
                     else:
                         binary_image_sum_avg.append(binary_image_sum)
                         eroded_binary_image_sum_avg.append(eroded_binary_image_sum)
                         very_eroded_binary_image_sum_avg.append(very_eroded_binary_image_sum)
                         very_very_eroded_binary_image_sum_avg.append(very_very_eroded_binary_image_sum)
+
+                        x_avg.append(average_column_position)
+                        y_avg.append(average_row_position)
 
 
                     # -----------------------------------------------DISPLAY----------------------
