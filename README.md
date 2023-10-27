@@ -33,10 +33,10 @@ Code for visualizing and refining YOLO annotations
 * [showpredictions.py](annotation_code/showpredictions.py): takes in .txt files in a folder, and displays the annotated images with label/confidence/bounding box coordinates. Currently provides various variables for filtering out annotations with potentially undesirable colonies. 
 
 ## Test Code
-* cannyEdge.py - creates and displays canny edge of an image. 
-* testErosion.py - creates and displays erosion of an image. 
-* testMinima.py - creates and displays minima of an image. Just a slightly different application of erosion. Does not work very well. 
-* testSegmentBacteria.py - uses YOLO detection annotations to create segmentation annotations. Does not work very well either. 
+* [cannyEdge.py](test_code/cannyEdge.py) - creates and displays canny edge of an image. 
+* [testErosion.py](test_code/testErosion.py) - creates and displays erosion of an image. 
+* [testMinima.py](test_code/testMinima.py) - creates and displays minima of an image. Just a slightly different application of erosion. Does not work very well. 
+* [testSegmentBacteria.py](test_code/testSegmentBacteria.py) - uses YOLO detection annotations to create segmentation annotations. Does not work very well either. 
 
 
 ## Models 
