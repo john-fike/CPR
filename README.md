@@ -1,6 +1,6 @@
 
 # 03CPR Bacteria Picking Robot Software
-*Developed by: (William Culhane)[https://wculhane.com/] , Sarah Dolan, and John Fike*
+*Developed by: [William Culhane](https://wculhane.com/), Sarah Dolan, and [John Fike](https://github.com/john-fike)*
 
 ## Table of Contents
 - [Description](#description)
@@ -46,4 +46,4 @@ CURRENTLY IN USE
 100% greyscale duplicate partition. 60% hue shift, 1000 epoch w/ 50 patience
 bounding box blur and noise, 2.5px
 
-(License: GNU GPLv3)[COPYING.md]
+[License: GNU GPLv3](COPYING.md)
