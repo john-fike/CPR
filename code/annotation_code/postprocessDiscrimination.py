@@ -25,8 +25,8 @@ def distance(x0, y0, x1=.5, y1=.5):
 
 
 # -----------------------------------------------DISCRIMINATION VARIABLES----------------------
-IMAGE_PATH = './images/realTest_v1/unprocessed/WIN_20231024_10_19_20_Pro.jpg'
-ANNOTATION_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/detect/predict88/labels/WIN_20231024_10_19_20_Pro.txt'
+IMAGE_PATH = './images/realTest_v1/unprocessed/WIN_20231024_10_15_42_Pro.jpg'
+ANNOTATION_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/detect/predict88/labels/WIN_20231024_10_15_42_Pro.txt'
 MIN_DISTANCE = .00
 MIN_CONFIDENCE = .0
 MARGIN = 1
@@ -35,19 +35,8 @@ MARGIN = 1
 yolo_found = 0
 found_circles = 0
 
-#images containing doublets
-doublets = [74,80,83,84,85,86,90,91,92,93,94,95,96,97]
-
-# intensity sums
-binary_image_sum_avg = []
-eroded_binary_image_sum_avg = []
-very_eroded_binary_image_sum_avg = []
-very_very_eroded_binary_image_sum_avg = []
-
-doublet_binary_image_sum_avg = []
-doublet_eroded_binary_image_sum_avg = []
-doublet_very_eroded_binary_image_sum_avg = []
-doublet_very_very_eroded_binary_image_sum_avg = []
+#images containing doublets 
+doublets = [40, 50, 65, 80, 90, 100, 105, 110, 115, 120, 6, 12, 18, 21, 24, 39, 51, 54, 63, 66, 72, 81, 84, 87, 90, 93, 96, 99, 102, 105, 108, 111, 114, 117, 120]
 
 # (x,y) pixel positions
 x_avg = []
@@ -55,6 +44,13 @@ y_avg = []
 doublet_x_avg = []
 doublet_y_avg = []
 
+# sort x_avg and y_avg in ascending order
+x_avg.sort()
+y_avg.sort()
+
+erosion_iterations = 50
+image_intensities_vs_erosion_iterations = []
+doublet_image_intensities_vs_erosion_iterations = []
 
 # Load your image
 # img = cv2.imread('./realTest_v1/processed/WIN_20231024_10_15_42_Pro.jpg')
@@ -71,16 +67,12 @@ gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 # Apply Gaussian blur to reduce noise
 gray_blur = cv2.GaussianBlur(gray, (3, 3), 2)
 
-
-
 img_width = img.shape[1]
 img_height = img.shape[0]
 
 with open (ANNOTATION_PATH, 'r') as file:
     lines = file.readlines()
-    for i in range(len(lines)):
-    # i = 95
-    # while True:
+    for i in range(0, len(lines), 3):
         line = lines[i]
         elements = line.split() #elements[] = [class, x, y, width, height, confidence]
 
@@ -120,126 +112,121 @@ with open (ANNOTATION_PATH, 'r') as file:
                     binary_image = cv2.bitwise_not(binary_image)                                                #invert                                 
                     
                     # -----------------------------------------------EROSION----------------------
-                    eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=3)
-                    very_eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=8)
-                    very_very_eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=12)
+                    binary_image_sums_temp = []
+                    for l in range(erosion_iterations):
+                        eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=l)
+                        binary_image_sum = np.sum(eroded_binary_image)
+                        binary_image_sums_temp.append(binary_image_sum)
 
-                    # -----------------------------------------------DRAW CIRCLES----------------------
-                    # circles = cv2.HoughCircles(gray_cropped_image, cv2.HOUGH_GRADIENT, dp=1, minDist= 10, param1=4, param2=10, minRadius=1, maxRadius=0)                    
-                    # if circles is not None:
-                    #     circles = np.uint16(np.around(circles))
-                    #     for i in circles[0, :]:
-                    #         cv2.circle(cropped_image, (i[0], i[1]), i[2], (0, 255, 0), 1)
-                    #         #print the center of the circle
-                    #         print("x: " + str(i[0]) + " y: " + str(i[1]))
-                    #     found_circles = found_circles + 1
-                            
-
-                            #display only the first circle
-                            # i = circles[0, 0]
-                            # cv2.circle(cropped_image, (i[0], i[1]), i[2], (0, 255, 0), 1)
-                            # Resize the image to 512x512
-
-
-                    # -----------------------------------------------IMAGE INTENSITY SUMS----------------------
-                    binary_image_sum = np.sum(binary_image)
-                    eroded_binary_image_sum = np.sum(eroded_binary_image)
-                    very_eroded_binary_image_sum = np.sum(very_eroded_binary_image)
-                    very_very_eroded_binary_image_sum = np.sum(very_very_eroded_binary_image)
-                    
                     #-----------------------------------------------AVERAGE (x,y) PIXEL POSITIONS----------------------
-                    row_sums = np.sum(binary_image, axis=1)
-                    column_sums = np.sum(binary_image, axis=0)
+                    # row_sums = np.sum(binary_image, axis=1)
+                    # column_sums = np.sum(binary_image, axis=0)
 
-                    # Calculate row and column positions
-                    row_positions = np.arange(binary_image.shape[0])
-                    column_positions = np.arange(binary_image.shape[1])
+                    # # Calculate row and column positions
+                    # row_positions = np.arange(binary_image.shape[0])
+                    # column_positions = np.arange(binary_image.shape[1])
 
-                    # Compute the total row and column sums
-                    total_row_sum = np.sum(row_sums)
-                    total_column_sum = np.sum(column_sums)
+                    # # Compute the total row and column sums
+                    # total_row_sum = np.sum(row_sums)
+                    # total_column_sum = np.sum(column_sums)
 
-                    # Calculate the average row and column positions
-                    average_row_position = np.dot(row_positions, row_sums) / total_row_sum
-                    average_column_position = np.dot(column_positions, column_sums) / total_column_sum
+                    # # Calculate the average row and column positions
+                    # average_row_position = np.dot(row_positions, row_sums) / total_row_sum
+                    # average_column_position = np.dot(column_positions, column_sums) / total_column_sum
 
 
                     # -----------------------------------------------APPEND TO ARRAYS----------------------
                     # check if i is within an array of ints
                     if(i in doublets):
-                        doublet_binary_image_sum_avg.append(binary_image_sum)
-                        doublet_eroded_binary_image_sum_avg.append(eroded_binary_image_sum)
-                        doublet_very_eroded_binary_image_sum_avg.append(very_eroded_binary_image_sum)   
-                        doublet_very_very_eroded_binary_image_sum_avg.append(very_very_eroded_binary_image_sum)
+                        doublet_image_intensities_vs_erosion_iterations.append(binary_image_sums_temp)
+                        print("doublet")
 
-                        doublet_x_avg.append(average_column_position)
-                        doublet_y_avg.append(average_row_position)
+                        # image_intensities_vs_erosion_iterations.append(binary_image_sums_temp)
+                        # doublet_x_avg.append(average_column_position)
+                        # doublet_y_avg.append(average_row_position)
                     else:
-                        binary_image_sum_avg.append(binary_image_sum)
-                        eroded_binary_image_sum_avg.append(eroded_binary_image_sum)
-                        very_eroded_binary_image_sum_avg.append(very_eroded_binary_image_sum)
-                        very_very_eroded_binary_image_sum_avg.append(very_very_eroded_binary_image_sum)
+                        # doublet_image_intensities_vs_erosion_iterations.append(binary_image_sums_temp)
+                        image_intensities_vs_erosion_iterations.append(binary_image_sums_temp)
+                        print("not doublet", i)
 
-                        x_avg.append(average_column_position)
-                        y_avg.append(average_row_position)
+                        # x_avg.append(average_column_position)
+                        # y_avg.append(average_row_position)
 
 
                     # -----------------------------------------------DISPLAY----------------------
-                    display_time = 15
+                    # display_time = 2
 
-                    resized_image = cv2.resize(cropped_image, (512, 512))
-                    title = 'ORIGINAL ' + str(i)
-                    cv2.imshow(title, resized_image)
-                    cv2.waitKey(display_time)
+                    # resized_image = cv2.resize(cropped_image, (512, 512))
+                    # title = 'ORIGINAL ' + str(i)
+                    # cv2.imshow(title, resized_image)
+                    # cv2.waitKey(display_time)
 
-                    resized_image = cv2.resize(binary_image, (512, 512))
-                    title = 'BINARY ' + str(i) +  " " + str(binary_image_sum/1000)
-                    print(title)
-                    cv2.imshow(title, resized_image)
-                    cv2.waitKey(display_time)
+                    # resized_image = cv2.resize(binary_image, (512, 512))
+                    # title = 'BINARY ' + str(i) +  " " + str(binary_image_sum/1000)
+                    # print(title)
+                    # cv2.imshow(title, resized_image)
+                    # cv2.waitKey(display_time)
 
-                    resized_image = cv2.resize(eroded_binary_image, (512, 512))
-                    title = 'ERODED BINARY ' + str(i) + " " + str(eroded_binary_image_sum/1000)
-                    print(title)
-                    cv2.imshow(title, resized_image)
-                    cv2.waitKey(display_time)
+                    # resized_image = cv2.resize(eroded_binary_image, (512, 512))
+                    # title = 'ERODED BINARY ' + str(i) + " " + str(eroded_binary_image_sum/1000)
+                    # print(title)
+                    # cv2.imshow(title, resized_image)
+                    # cv2.waitKey(display_time)
 
-                    resized_image = cv2.resize(very_eroded_binary_image, (512, 512))
-                    title = 'VERY ERODED BINARY ' + str(i) + " " + str(very_eroded_binary_image_sum/1000)
-                    print(title)
-                    cv2.imshow(title, resized_image)
-                    cv2.waitKey(display_time)
+                    # resized_image = cv2.resize(very_eroded_binary_image, (512, 512))
+                    # title = 'VERY ERODED BINARY ' + str(i) + " " + str(very_eroded_binary_image_sum/1000)
+                    # print(title)
+                    # cv2.imshow(title, resized_image)
+                    # cv2.waitKey(display_time)
 
-                    resized_image = cv2.resize(very_very_eroded_binary_image, (512, 512))
-                    title = 'VERY VERY ERODED BINARY ' + str(i) + " " + str(very_very_eroded_binary_image_sum/1000)
-                    print(title)
-                    cv2.imshow(title, resized_image)
-                    cv2.waitKey(display_time)
+                    # resized_image = cv2.resize(very_very_eroded_binary_image, (512, 512))
+                    # title = 'VERY VERY ERODED BINARY ' + str(i) + " " + str(very_very_eroded_binary_image_sum/1000)
+                    # print(title)
+                    # cv2.imshow(title, resized_image)
+                    # cv2.waitKey(display_time)
 
 
-                    cv2.waitKey(0)
-                    cv2.destroyAllWindows()
+                    # cv2.waitKey(0)   
+                    # cv2.destroyAllWindows()
 
 
 
 
     # -----------------------------------------------PLOT---------------------- 
+
+    # binary_image_sums_temp = 
+    #    intensity per         
+    #   erosion iteration       
+    #           |             
+    #          [*, *, *, ... 20]
+    # image -- [*, *, *, ... 20]
+    #          [*, *, *, ... 20]
+    #                         |   
+    #                         |
+    #                20 erosion iterations
+
+
     #plot a graph of image sums vs. erosion iterations
-    x = [0, 1, 2, 3]
-    y = [np.mean(binary_image_sum_avg), np.mean(eroded_binary_image_sum_avg), np.mean(very_eroded_binary_image_sum_avg), np.mean(very_very_eroded_binary_image_sum_avg)]
+    x = np.arange(0, erosion_iterations, 1)
+    
+    #Transpose & calculate the average of each column
+    transposed_binary_image_sums = list(map(list, zip(*image_intensities_vs_erosion_iterations)))
+    doublet_transposed_binary_image_sums = list(map(list, zip(*doublet_image_intensities_vs_erosion_iterations)))
+    for row in doublet_transposed_binary_image_sums:
+        print(row)
+
+    # find average intensity per erosion iteration, plot
+    column_averages = [sum(column) / len(column)*1000 for column in transposed_binary_image_sums]
+    y = column_averages
+    plt.plot(x, y, color='g')
+
+    column_averages = [sum(column) / len(column)*1000 for column in doublet_transposed_binary_image_sums]
+    y = column_averages
+    plt.plot(x, y, color='g')
+
+    plt.title('Image Intensity vs. Erosion Iterations')
+    plt.xlabel('Erosion Iterations')
+    plt.ylabel('Image Intensity')
+    plt.show()
     
 
-    z = [np.mean(doublet_binary_image_sum_avg), np.mean(doublet_eroded_binary_image_sum_avg), np.mean(doublet_very_eroded_binary_image_sum_avg), np.mean(doublet_very_very_eroded_binary_image_sum_avg)]
-
-
-    #bar graph plot boublet avg next to normal avg against erosion iterations
-    plt.plot(x, y, color='g')
-    plt.plot(x, z, color='r')
-    plt.title('Average Image Intensity vs. Erosion Iterations')
-    plt.xlabel('Erosion Iterations')
-    plt.ylabel('Average Image Intensity')
-    plt.show()
-
-
-print("yolo found" , yolo_found)
-print("doublet discrimination found only " , found_circles)
