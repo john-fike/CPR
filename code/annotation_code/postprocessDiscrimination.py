@@ -136,6 +136,8 @@ with open (ANNOTATION_PATH, 'r') as file:
 
 
                     # -----------------------------------------------APPEND TO ARRAYS----------------------
+
+                    # -----------------------------------------------APPEND TO ARRAYS----------------------
                     # check if i is within an array of ints
                     if(i in doublets):
                         doublet_image_intensities_vs_erosion_iterations.append(binary_image_sums_temp)

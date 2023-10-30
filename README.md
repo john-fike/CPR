@@ -40,7 +40,7 @@ Code for visualizing and refining YOLO annotations
 
 
 ## Models 
-** only one model added because they are big ** 
+**only one model added because they are big** 
 norbert_v3.pt
 CURRENTLY IN USE
 Data augmentation steps:
