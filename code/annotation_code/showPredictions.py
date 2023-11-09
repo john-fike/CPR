@@ -8,26 +8,26 @@ def distance(x0, y0, x1=.5, y1=.5):
     y_dist = abs(y0 - y1) ** 2
     return (x_dist + y_dist) ** .5
 
-DISPLAY_IMAGE_FOLDER_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/realTest_v1/processed/'
-PREDICTION_FOLDER_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/detect/predict88/'
+DISPLAY_IMAGE_FOLDER_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/images/realTest_v2/processed/'
+PREDICTION_FOLDER_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/detect/predict3/'
 
-#DEFAULTS
-DISPLAY_TIME = 10000
-MIN_DISTANCE = .02
-MIN_SELECTION_CONFIDENCE = 0.0
-MIN_DISCRIMINATION_CONFIDENCE = .15
-MIN_SIZE = .01
-MAX_SIZE = .5
-MAXIMUM_RATIO = .15    #ratio of height to width of box. If the ratio is greater than this, the box is not displayed. ratio is calculated as the absolute value of 1 - (height / width)
-
-# #UNCOMMENT TO DISABLE SELECTION VARIABLES
-# DISPLAY_TIME = 5000
-# MIN_DISTANCE = 0.0 
-# MIN_SELECTION_CONFIDENCE = 0.0 
-# MIN_DISCRIMINATION_CONFIDENCE = 0.0
-# MIN_SIZE = 0.0
-# MAX_SIZE = 1.0
+# #DEFAULTS
+# DISPLAY_TIME = 10000
+# MIN_DISTANCE = .02
+# MIN_SELECTION_CONFIDENCE = 0.0
+# MIN_DISCRIMINATION_CONFIDENCE = .15       #if a colony is next to another colony, the colony it's next to must have a confidence greater than this to be displayed  #maybe i should make this a percentage of the average confidence of all the predictions in the image (minus those that are outside of the dish)
+# MIN_SIZE = .01
+# MAX_SIZE = .5
 # MAXIMUM_RATIO = .15    #ratio of height to width of box. If the ratio is greater than this, the box is not displayed. ratio is calculated as the absolute value of 1 - (height / width)
+
+#UNCOMMENT TO DISABLE SELECTION VARIABLES
+DISPLAY_TIME = 5000
+MIN_DISTANCE = 0.0 
+MIN_SELECTION_CONFIDENCE = 0.0 
+MIN_DISCRIMINATION_CONFIDENCE = 0.0
+MIN_SIZE = 0.0
+MAX_SIZE = 1.0
+MAXIMUM_RATIO = .15    #ratio of height to width of box. If the ratio is greater than this, the box is not displayed. ratio is calculated as the absolute value of 1 - (height / width)
 
 labelFolderPath = os.path.join(PREDICTION_FOLDER_PATH, 'labels')
 #array that holds the average values for 
@@ -37,6 +37,12 @@ labelFolderPath = os.path.join(PREDICTION_FOLDER_PATH, 'labels')
 for file in os.listdir(PREDICTION_FOLDER_PATH):
     if file.endswith('.jpg'):
         img = cv2.imread(os.path.join(DISPLAY_IMAGE_FOLDER_PATH, file))
+
+        print(os.path.join(DISPLAY_IMAGE_FOLDER_PATH, file))
+        if img is None:
+            print("Error: Could not load the image")
+            exit()
+
         file_name = os.path.splitext(file)[0]
         with open(os.path.join(labelFolderPath, file_name + ".txt")) as annotationFile:
             lines = annotationFile.readlines()

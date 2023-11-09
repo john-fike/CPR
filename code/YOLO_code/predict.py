@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 import os
 
-folder = './realTest_v1/processed'
+folder = './images/realTest_v2/processed'
 
 # # #load model, find bacteria colonies in all images in folder path. 
 # model = YOLO('AGAR_v2.pt')

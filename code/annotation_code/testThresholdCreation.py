@@ -25,8 +25,8 @@ def distance(x0, y0, x1=.5, y1=.5):
 
 
 # -----------------------------------------------DISCRIMINATION VARIABLES----------------------
-IMAGE_PATH = './images/realTest_v2/unprocessed/WIN_20231109_13_41_56_Pro.jpg'
-ANNOTATION_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/detect/predict3/labels/WIN_20231109_13_41_56_Pro.txt'
+IMAGE_PATH = './images/realTest_v1/unprocessed/WIN_20231024_10_15_42_Pro.jpg'
+ANNOTATION_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/detect/predict88/labels/WIN_20231024_10_15_42_Pro.txt'
 MIN_DISTANCE = .00
 MIN_CONFIDENCE = .0
 MARGIN = 1
@@ -155,18 +155,18 @@ with open (ANNOTATION_PATH, 'r') as file:
 
 
                     # -----------------------------------------------DISPLAY----------------------
-                    display_time = 500
+                    display_time = 2000
 
-                    resized_image = cv2.resize(cropped_image, (512, 512))
-                    title = 'ORIGINAL ' + str(i)
-                    cv2.imshow(title, resized_image)
-                    cv2.waitKey(display_time)
+                    # resized_image = cv2.resize(cropped_image, (512, 512))
+                    # title = 'ORIGINAL ' + str(i)
+                    # cv2.imshow(title, resized_image)
+                    # cv2.waitKey(display_time)
 
-                    resized_image = cv2.resize(binary_image, (512, 512))
-                    title = 'BINARY ' + str(i) +  " " + str(binary_image_sum/1000)
-                    print(title)
-                    cv2.imshow(title, resized_image)
-                    cv2.waitKey(display_time)
+                    # resized_image = cv2.resize(binary_image, (512, 512))
+                    # title = 'BINARY ' + str(i) +  " " + str(binary_image_sum/1000)
+                    # print(title)
+                    # cv2.imshow(title, resized_image)
+                    # cv2.waitKey(display_time)
 
                     # resized_image = cv2.resize(eroded_binary_image, (512, 512))
                     # title = 'ERODED BINARY '
@@ -188,7 +188,7 @@ with open (ANNOTATION_PATH, 'r') as file:
 
 
                     # cv2.waitKey(0)   
-                    cv2.destroyAllWindows()
+                    # cv2.destroyAllWindows()
 
 
 
@@ -207,30 +207,30 @@ with open (ANNOTATION_PATH, 'r') as file:
     #                20 erosion iterations
 
 
-    # # #plot a graph of image sums vs. erosion iterations
-    # x = np.arange(0, erosion_iterations, 1)
+    # #plot a graph of image sums vs. erosion iterations
+    x = np.arange(0, erosion_iterations, 1)
     
-    # # #Transpose & calculate the average of each column
-    # transposed_binary_image_sums = list(map(list, zip(*image_intensities_vs_erosion_iterations)))
-    # doublet_transposed_binary_image_sums = list(map(list, zip(*doublet_image_intensities_vs_erosion_iterations)))
+    # #Transpose & calculate the average of each column
+    transposed_binary_image_sums = list(map(list, zip(*image_intensities_vs_erosion_iterations)))
+    doublet_transposed_binary_image_sums = list(map(list, zip(*doublet_image_intensities_vs_erosion_iterations)))
 
-    # # find average intensity per erosion iteration, plot
-    # column_averages = [sum(column) / len(column)*1000 for column in transposed_binary_image_sums]
-    # print(column_averages)
-    # y = column_averages
-    # plt.plot(x, y, color='g')
+    # find average intensity per erosion iteration, plot
+    column_averages = [sum(column) / len(column)*1000 for column in transposed_binary_image_sums]
+    print(column_averages)
+    y = column_averages
+    plt.plot(x, y, color='g')
 
-    # column_averages = [sum(column) / len(column)*1000 for column in doublet_transposed_binary_image_sums]
-    # y = column_averages
-    # print(column_averages)
-    # plt.plot(x, y, color='g')
+    column_averages = [sum(column) / len(column)*1000 for column in doublet_transposed_binary_image_sums]
+    y = column_averages
+    print(column_averages)
+    plt.plot(x, y, color='g')
 
-    # plt.title('Image Intensity vs. Erosion Iterations')
-    # plt.xlabel('Erosion Iterations')
-    # plt.ylabel('Image Intensity')
-    # plt.show()
-    # plt.waitforbuttonpress()
-    # plt.close()
+    plt.title('Image Intensity vs. Erosion Iterations')
+    plt.xlabel('Erosion Iterations')
+    plt.ylabel('Image Intensity')
+    plt.show()
+    plt.waitforbuttonpress()
+    plt.close()
 
     # x_avg = sum(x_avg) / len(x_avg)
     # y_avg = sum(y_avg) / len(y_avg)
@@ -238,12 +238,12 @@ with open (ANNOTATION_PATH, 'r') as file:
     # doublet_x_avg = sum(doublet_x_avg) / len(doublet_x_avg)
     # doublet_y_avg = sum(doublet_y_avg) / len(doublet_y_avg)
 
-    # # print average value in x_avg
-    # print("x_avg" , sum(x_avg) / len(x_avg))
-    # print("y_avg" , sum(y_avg) / len(y_avg))
+    # print average value in x_avg
+    print("x_avg" , sum(x_avg) / len(x_avg))
+    print("y_avg" , sum(y_avg) / len(y_avg))
 
-    # print("doublet_x_avg" , sum(doublet_x_avg) / len(doublet_x_avg))
-    # print("doublet_y_avg" , sum(doublet_y_avg) / len(doublet_y_avg))
+    print("doublet_x_avg" , sum(doublet_x_avg) / len(doublet_x_avg))
+    print("doublet_y_avg" , sum(doublet_y_avg) / len(doublet_y_avg))
     
     
     # plt.plot(x_avg, y_avg, 'ro')
