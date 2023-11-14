@@ -10,9 +10,9 @@ def distance(x0, y0, x1=.5, y1=.5):
 
 
 def discriminate(PREDICTION_FILE_PATH, 
-                 PISS = 'FUCK',
+                 PISS = 'FUCK',      #do not remove
                  GOOD_OUTPUT_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/good_colonies/',
-                 BAD_OUTPUT_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/bad_colonies/',
+                 BAD_OUTPUT_PATH  = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/bad_colonies/',
                  MIN_DISTANCE = .02,
                  MIN_SELECTION_CONFIDENCE = 0.0, 
                  MIN_DISCRIMINATION_CONFIDENCE = .15, 
@@ -28,33 +28,55 @@ def discriminate(PREDICTION_FILE_PATH,
     print("Good file name: " , good_file_name)
     print("Bad file name: "  , bad_file_name)
 
+    with open(good_file_name, 'w') as good_file:
+        good_file.write(base_file_name + '\n')
+    with open(bad_file_name, 'w') as bad_file:
+        bad_file.write(base_file_name + '\n')
 
-    with open(PREDICTION_FILE_PATH) as annotationFile:
-        lines = annotationFile.readlines()
-        for line in lines:
-            main_colony = line.split() #elements[] = [class, x, y, width, height, confidence]
-            #determine height 
-            ratio = abs((float(main_colony[4]) / float(main_colony[3])) - 1 )
-            #checks: colony is within petri dish     AND     colony is large enough     AND     colony is small enough    AND    ratio is small enough (colony is roound enough)
-            # if (distance(float(main_colony[1]),float(elements[2])) < .4) and float(elements[4]) > MIN_SIZE and float(elements[4]) < MAX_SIZE and ratio < MAXIMUM_RATIO:
-            if(distance(float(main_colony[1]),float(main_colony[2])) < PETRI_DISH_RADIUS and float(main_colony[5]) > MIN_SELECTION_CONFIDENCE):
+
+    with open(PREDICTION_FILE_PATH) as predictionFile:
+        lines = predictionFile.readlines()
+        for main_colony_line in lines:
+            main_colony = main_colony_line.split() # [class, x, y, width, height, confidence]
+            main_colony_x = float(main_colony[1])
+            main_colony_y = float(main_colony[2])
+            main_colony_r = float(main_colony[3])
+            main_colony_confidence = float(main_colony[5])
+            ratio = abs((float(main_colony[4]) / float(main_colony[3])) - 1 ) #ok really this is how not square it is not the ratio but close enough
+
+            if(distance(main_colony_x,main_colony_y) < PETRI_DISH_RADIUS and main_colony_confidence > MIN_SELECTION_CONFIDENCE):
                 bad = False
-                for line in lines: 
-                    more_elements = line.split()
-                    #assess the closest colony to the current colony, if it is closer than MIN_DISTANCE, don't display the current colony
-                    if (distance(float(more_elements[1]),float(more_elements[2]), float(main_colony[1]), float(main_colony[2])) < MIN_DISTANCE and #distance to colony
-                        distance(float(more_elements[1]),float(more_elements[2]), float(main_colony[1]), float(main_colony[2])) != 0.0 and         #make sure it's not the same colony
-                        float(main_colony[5]) > MIN_DISCRIMINATION_CONFIDENCE):                                                                 #make sure the colony prediction is confident enough to be used for discrimination
+                for neighbor_colony_line in lines: 
+                    neighbor_colony = neighbor_colony_line.split()
+                    neighbor_colony_x = float(neighbor_colony[1])
+                    neighbor_colony_y = float(neighbor_colony[2])
+                    neighbor_colony_r = float(neighbor_colony[3])
+                    neighbor_colony_confidence = float(neighbor_colony[5])
+
+                    distance_between_colony_centers = distance(main_colony_x, main_colony_y, neighbor_colony_x, neighbor_colony_y)
+
+                    if (distance_between_colony_centers <  MIN_DISTANCE and                #distance to colony
+                        distance_between_colony_centers != 0.0 and                #make sure it's not the same colony
+                        neighbor_colony_confidence > MIN_DISCRIMINATION_CONFIDENCE): #make sure the colony prediction is confident enough to be used for discrimination
+
+                        with open(bad_file_name, 'a') as bad_file:
+                            bad_file.write(neighbor_colony_line)
+                        lines.remove(neighbor_colony_line)
                         bad = True
-                    
-                    # if bad:
+
+            if bad:
+                with open(bad_file_name, 'a') as bad_file:
+                    lines.remove(main_colony_line)
+            else:
+                with open(good_file_name, 'a') as good_file:
+                    good_file.write(main_colony_line)
                         
 
 
 if __name__ == "__main__":
     
     DISPLAY_IMAGE_FOLDER_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/images/realTest_v3/unprocessed/WIN_20231113_12_54_17_Pro.jpg'
-    PREDICTION_FOLDER_PATH =    'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/detect/predict6/labels/WIN_20231113_12_54_17_Pro.txt'
+    PREDICTION_FOLDER_PATH =    './WIN_20231113_12_54_17_Pro.txt'
     DISPLAY_TIME = 1000
     discriminate(PREDICTION_FOLDER_PATH, DISPLAY_TIME)
 
@@ -104,7 +126,7 @@ if __name__ == "__main__":
 
 
 
-                        # next_closest_colony_x = int(float(more_elements[1]) * img.shape[1])
-                        # next_closest_colony_y = int(float(more_elements[2]) * img.shape[0])
-                        # next_closest_colony_r = int(float(more_elements[3]) * img.shape[1] / 2) 
+                        # next_closest_colony_x = int(float(neighbor_colony[1]) * img.shape[1])
+                        # next_closest_colony_y = int(float(neighbor_colony[2]) * img.shape[0])
+                        # next_closest_colony_r = int(float(neighbor_colony[3]) * img.shape[1] / 2) 
 

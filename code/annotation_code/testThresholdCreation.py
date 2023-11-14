@@ -7,9 +7,8 @@ def add_hough_circles(image, prediction_file, display=False, display_time=5000):
         print("Error: Could not load the image")
         exit()
 
-    # check if image is grayscale 
+    # make image grayscale if needed  
     if len(image.shape) > 2:
-    # Convert the image to grayscale
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 
