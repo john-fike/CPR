@@ -1,7 +1,7 @@
 import os
 import cv2
 
-filepath = './images/realTest_v2/'
+filepath = './images/realTest_v3/'
 unprocessedFiles = os.path.join(filepath, 'unprocessed')
 processedFiles = os.path.join(filepath, 'processed')
 

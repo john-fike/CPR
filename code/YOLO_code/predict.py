@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 import os
 
-folder = './images/realTest_v2/processed'
+folder = './images/realTest_v3/processed'
 
 # # #load model, find bacteria colonies in all images in folder path. 
 # model = YOLO('AGAR_v2.pt')
@@ -14,7 +14,7 @@ folder = './images/realTest_v2/processed'
 
 model = YOLO('models/norbert_v3.pt')
 for image in os.listdir(folder):
-    model.predict(os.path.join(folder, image), save=True, imgsz=640, save_txt = True, classes = None, save_conf = True, hide_labels = False, hide_conf = False)  # creates 'predictions.jpg'
+    model.predict(os.path.join(folder, image), conf = .01, save=True, imgsz=640, save_txt = True, classes = None, save_conf = True, hide_labels = False, hide_conf = False)  # creates 'predictions.jpg'
 
 # Name	Type	Default	Description
 # source	str	'ultralytics/assets'	source directory for images or videos

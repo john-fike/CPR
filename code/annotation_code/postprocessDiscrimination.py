@@ -27,13 +27,12 @@ def distance(x0, y0, x1=.5, y1=.5):
 # -----------------------------------------------DISCRIMINATION VARIABLES----------------------
 IMAGE_PATH = './images/realTest_v2/unprocessed/WIN_20231109_13_41_56_Pro.jpg'
 ANNOTATION_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/detect/predict3/labels/WIN_20231109_13_41_56_Pro.txt'
+
 MIN_DISTANCE = .00
 MIN_CONFIDENCE = .0
 MARGIN = 1
 
 # -----------------------------------------------STATS----------------------
-yolo_found = 0
-found_circles = 0
 
 #images containing doublets 
 doublets = [40, 50, 65, 80, 90, 100, 105, 110, 115, 120, 6, 12, 18, 21, 24, 39, 51, 54, 63, 66, 72, 81, 84, 87, 90, 93, 96, 99, 102, 105, 108, 111, 114, 117, 120]
@@ -90,7 +89,6 @@ with open (ANNOTATION_PATH, 'r') as file:
             #     # if the colony meets all the criteria, display it  
                 x, y, width, height = int(float(elements[1]) * img_width), int(float(elements[2]) * img_height), int(float(elements[3]) * img_width * MARGIN), int(float(elements[4]) * img_height * MARGIN)
                 cropped_image = img[int(y-height) : int(y+height) , int(x-width) : int(x+width)]
-                yolo_found = yolo_found + 1
                 if(cropped_image is None):
                     print("Error: Could not read image file")
                 
