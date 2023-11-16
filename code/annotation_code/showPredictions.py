@@ -1,21 +1,17 @@
 import cv2
 import os 
 import numpy as np
-
-#determines distance between two scaled points. defaults to finding distance from center if provided with just one point
-def distance(x0, y0, x1=.5, y1=.5):
-    x_dist = abs(x0 - x1) ** 2
-    y_dist = abs(y0 - y1) ** 2
-    return (x_dist + y_dist) ** .5
-
+import CPR_tools as cpr
+from tqdm import tqdm
 
 def discriminate(PREDICTION_FILE_PATH, 
-                 PISS = 'FUCK',      #do not remove
+                 image_file_path,
+                 PISS = 'FUCK',      #do not remove--code will break
                  GOOD_OUTPUT_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/good_colonies/',
                  BAD_OUTPUT_PATH  = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/bad_colonies/',
-                 MIN_DISTANCE = .02,
-                 MIN_SELECTION_CONFIDENCE = 0.0, 
-                 MIN_DISCRIMINATION_CONFIDENCE = .15, 
+                 MIN_DISTANCE = .01,
+                 MIN_SELECTION_CONFIDENCE = 0.15, 
+                 MIN_DISCRIMINATION_CONFIDENCE = .05, 
                  MIN_SIZE = .01, 
                  MAX_SIZE = .5, MAXIMUM_RATIO = .15, 
                  PETRI_DISH_RADIUS = .4,
@@ -28,24 +24,31 @@ def discriminate(PREDICTION_FILE_PATH,
     print("Good file name: " , good_file_name)
     print("Bad file name: "  , bad_file_name)
 
-    with open(good_file_name, 'w') as good_file:
-        good_file.write(base_file_name + '\n')
-    with open(bad_file_name, 'w') as bad_file:
-        bad_file.write(base_file_name + '\n')
+    good_colonies = []
+    bad_colonies = []
 
+    #clear files
+    with open(good_file_name, 'w') as good_file:
+        pass
+    with open(bad_file_name, 'w') as bad_file:
+        pass
 
     with open(PREDICTION_FILE_PATH) as predictionFile:
         lines = predictionFile.readlines()
-        for main_colony_line in lines:
+        for main_colony_line in tqdm(lines):
             main_colony = main_colony_line.split() # [class, x, y, width, height, confidence]
             main_colony_x = float(main_colony[1])
             main_colony_y = float(main_colony[2])
-            main_colony_r = float(main_colony[3])
+            main_colony_w = float(main_colony[3])
+            main_colony_h = float(main_colony[4])
             main_colony_confidence = float(main_colony[5])
             ratio = abs((float(main_colony[4]) / float(main_colony[3])) - 1 ) #ok really this is how not square it is not the ratio but close enough
-
-            if(distance(main_colony_x,main_colony_y) < PETRI_DISH_RADIUS and main_colony_confidence > MIN_SELECTION_CONFIDENCE):
-                bad = False
+            
+            is_bad_colony = True
+            if(cpr.distance(x0=main_colony_x, y0=main_colony_y) < PETRI_DISH_RADIUS and main_colony_confidence > MIN_SELECTION_CONFIDENCE and 
+               cpr.binary_disciminate(img_file_path=image_file_path, x=main_colony_x, y=main_colony_y, width=main_colony_w, height=main_colony_h, bad_display=True, display_time=100)
+               ):
+                is_bad_colony = False
                 for neighbor_colony_line in lines: 
                     neighbor_colony = neighbor_colony_line.split()
                     neighbor_colony_x = float(neighbor_colony[1])
@@ -53,33 +56,69 @@ def discriminate(PREDICTION_FILE_PATH,
                     neighbor_colony_r = float(neighbor_colony[3])
                     neighbor_colony_confidence = float(neighbor_colony[5])
 
-                    distance_between_colony_centers = distance(main_colony_x, main_colony_y, neighbor_colony_x, neighbor_colony_y)
+                    distance_between_colony_centers = cpr.distance(x0=main_colony_x, y0=main_colony_y, r0=main_colony_w, 
+                                                                   x1=neighbor_colony_x, y1=neighbor_colony_y, r1=neighbor_colony_r)
 
-                    if (distance_between_colony_centers <  MIN_DISTANCE and                #distance to colony
-                        distance_between_colony_centers != 0.0 and                #make sure it's not the same colony
+                    if (distance_between_colony_centers <  MIN_DISTANCE and          #distance to colony
+                        distance_between_colony_centers != 0.0 and                   #make sure it's not the same colony
                         neighbor_colony_confidence > MIN_DISCRIMINATION_CONFIDENCE): #make sure the colony prediction is confident enough to be used for discrimination
+                        is_bad_colony = True
 
-                        with open(bad_file_name, 'a') as bad_file:
-                            bad_file.write(neighbor_colony_line)
-                        lines.remove(neighbor_colony_line)
-                        bad = True
+            if is_bad_colony:
+                if not bad_colonies.__contains__(main_colony_line):
+                    with open(bad_file_name, 'a') as bad_file:
+                        bad_file.write(main_colony_line)
+                        bad_colonies.append(main_colony_line)
 
-            if bad:
-                with open(bad_file_name, 'a') as bad_file:
-                    lines.remove(main_colony_line)
             else:
-                with open(good_file_name, 'a') as good_file:
-                    good_file.write(main_colony_line)
+                if not good_colonies.__contains__(main_colony_line):
+                    with open(good_file_name, 'a') as good_file:
+                        good_file.write(main_colony_line)
+                        lines.remove(main_colony_line)
                         
+def showPredictions(good_colony_file_path, bad_colony_file_path, image_path, display_time = 2000):
+    image = cv2.imread(image_path)
+    if image is None:
+        print("Error: Could not load the image")
+        exit()
+    
+    with open(good_colony_file_path) as good_colony_file:
+        good_colonies = good_colony_file.readlines()
+        for colony_line in good_colonies:
+            if colony_line is not None:
+                elements = colony_line.split()
+                x = int(float(elements[1]) * image.shape[1])
+                y = int(float(elements[2]) * image.shape[0])
+                r = int(float(elements[3]) * image.shape[1] / 2)
+                cv2.circle(image, (x, y), r, (0, 255, 0), 1)
 
+    with open(bad_colony_file_path) as bad_colony_file:
+        bad_colonies = bad_colony_file.readlines()
+        for colony_line in bad_colonies:
+            if colony_line is not None:
+                elements = colony_line.split()
+                x = int(float(elements[1]) * image.shape[1])
+                y = int(float(elements[2]) * image.shape[0])
+                r = int(float(elements[3]) * image.shape[1] / 2)
+                cv2.circle(image, (x, y), r, (0, 0, 255), 1)
+    
+    image = cv2.resize(image, (640, 640))
+    cv2.imshow('image', image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
 
 if __name__ == "__main__":
     
-    DISPLAY_IMAGE_FOLDER_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/images/realTest_v3/unprocessed/WIN_20231113_12_54_17_Pro.jpg'
-    PREDICTION_FOLDER_PATH =    './WIN_20231113_12_54_17_Pro.txt'
-    DISPLAY_TIME = 1000
-    discriminate(PREDICTION_FOLDER_PATH, DISPLAY_TIME)
-
+    DISPLAY_IMAGE_PATH ='C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/images/realTest_v3/unprocessed/WIN_20231113_12_53_28_Pro.jpg'
+    PREDICTION_FILE_PATH ='C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/runs/detect/predict5/labels/WIN_20231113_12_53_28_Pro.txt'
+    DISPLAY_TIME = 5000
+    discriminate(PREDICTION_FILE_PATH, DISPLAY_IMAGE_PATH, DISPLAY_TIME)
+    showPredictions(good_colony_file_path='C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/good_colonies/WIN_20231113_12_53_28_Pro.txt', 
+                    bad_colony_file_path= 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/bad_colonies/WIN_20231113_12_53_28_Pro.txt', 
+                    image_path=DISPLAY_IMAGE_PATH,
+                    display_time=DISPLAY_TIME
+                    )
 
 
 
@@ -102,10 +141,11 @@ if __name__ == "__main__":
         #         w = int(float(elements[3]) * img.shape[1] / 2)
         #         h = int(float(elements[4]) * img.shape[0] / 2)
 
+                
         #         if not bad:
         #             #if the colony meets all the criteria, display it  
         #             color = (0, int(float(elements[5]) * 255), 0)
-                
+
         #         if bad:
         #             color = (0, 0, 255)
         #             #plot line from x y to next_closest_colony_x next_closest_colony_y
@@ -123,7 +163,6 @@ if __name__ == "__main__":
         # img = cv2.resize(img, (640, 640))
         # cv2.imshow('image', img)
         # cv2.waitKey(DISPLAY_TIME)
-
 
 
                         # next_closest_colony_x = int(float(neighbor_colony[1]) * img.shape[1])

@@ -7,7 +7,7 @@ def add_hough_circles(image, prediction_file, display=False, display_time=5000):
         print("Error: Could not load the image")
         exit()
 
-    # make image grayscale if needed  
+    # make image grayscale if needed 
     if len(image.shape) > 2:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -34,9 +34,8 @@ def add_hough_circles(image, prediction_file, display=False, display_time=5000):
             image_height = image.shape[0]    
             with open (prediction_file, 'a') as f:
                 f.write("0 " + str(x/image_width) + " " + str(y/image_height) + " " + str(r/image_width) +  " " + str(r/image_width) + " .07" "\n")
-
     else:
-        print("No circles detected")
+        print("No hough circles detected")
 
     if display:
         image = cv2.resize(image, (640, 640))
