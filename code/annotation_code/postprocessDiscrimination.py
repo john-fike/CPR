@@ -168,7 +168,6 @@ def discriminate(IMAGE_PATH, ANNOTATION_PATH):
 
                         resized_image = cv2.resize(binary_image, (512, 512))
                         title = 'BINARY ' 
-                        print(title)
                         cv2.imshow(title, resized_image)
                         cv2.waitKey(display_time)
 

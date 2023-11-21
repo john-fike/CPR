@@ -55,8 +55,13 @@ def distance(x0, y0, r0=0, x1=.5, y1=.5, r1=0):
     distance = distance - (r0 + r1)
     return (x_dist + y_dist) ** .5
 
-def binary_disciminate(img_file_path, x, y, width, height, margin = 1, erosion_thresholds = (180, 140, 110, 90), erosion_iterations = (0, 1, 2, 3), display = False, bad_display = False, display_time = 2000):
 
+#returns boolean of whether or not the colony is good 
+#if the binerized image has a normalized intensity above 
+# the threshold at any erosion iteration, the colony is bad
+def binary_disciminate(img_file_path, x, y, width, height, margin = 1, erosion_thresholds = (180, 140, 110, 90), erosion_iterations = (0, 1, 2, 3), original_display = False, bad_display = False, good_display=False, display_time = 2000):
+
+    print("binary shit!")
     # -----------------------------------------------LOAD IMAGE AND PROPERTIES------------------
     img = cv2.imread(img_file_path)
     # Check if the image was loaded successfully
@@ -93,7 +98,7 @@ def binary_disciminate(img_file_path, x, y, width, height, margin = 1, erosion_t
     binary_image = cv2.threshold(gray_cropped_image, threshold, 255, cv2.THRESH_BINARY)[1]
     binary_image = cv2.bitwise_not(binary_image)                                                #invert                                 
     
-    if display:
+    if original_display:
         title = "Original"
         display_image = cv2.resize(cropped_image, (640, 640))
         cv2.imshow(title, display_image)
@@ -106,28 +111,104 @@ def binary_disciminate(img_file_path, x, y, width, height, margin = 1, erosion_t
         eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=iterations)
         binary_image_sum = np.sum(eroded_binary_image)          #sum of all pixels in the image
         binary_image_sum = binary_image_sum / (width * height)  #normalize
-        if display:            
+        if original_display:            
             title = "Erosion iteration: " + str(iterations) + " Normalized intensity: " + str(int(binary_image_sum)) + " Threshold: " + str(erosion_threshold)
             display_image = cv2.resize(eroded_binary_image, (640, 640))
             cv2.imshow(title, display_image)
             cv2.waitKey(display_time)
             cv2.destroyAllWindows()
+
         if binary_image_sum > erosion_threshold:
             print("Colony exceed threshold at erosion iteration: " + str(iterations) + " Normalized intensity: " + str(int(binary_image_sum)) + " Threshold: " + str(erosion_threshold))
-            cv2.circle(img, (int(x), int(y)), int(width/margin), (0, 0, 255), 1)
-            img = cv2.resize(img, (640, 640))
             if(bad_display):
+                cv2.circle(img, (int(x), int(y)), int(width/margin), (0, 0, 255), 1)
+                img = cv2.resize(img, (640, 640))
                 cv2.imshow("Violating Colony", img)
                 cv2.waitKey(display_time)
                 cv2.destroyAllWindows()
                 display_image = cv2.resize(eroded_binary_image, (640, 640))
-                cv2.imshow("Violating Colony", display_image)
+                cv2.imshow("BAD Colony", display_image)
                 cv2.waitKey(display_time)
                 cv2.destroyAllWindows()
-            cv2.waitKey(display_time)
             return False
         
-    return True
+        else:
+            print("Colony passed threshold at erosion iteration: " + str(iterations) + " Normalized intensity: " + str(int(binary_image_sum)) + " Threshold: " + str(erosion_threshold))
+            if(good_display):
+                cv2.circle(img, (int(x), int(y)), int(width/margin), (0, 0, 255), 1)
+                img = cv2.resize(img, (640, 640))
+                cv2.imshow("GOOD Colony", img)
+                cv2.waitKey(display_time)
+                cv2.destroyAllWindows()
+                display_image = cv2.resize(eroded_binary_image, (640, 640))
+                cv2.imshow("GOOD Colony", display_image)
+                cv2.waitKey(display_time)
+                cv2.destroyAllWindows()
+            return True
+
+#creates a .txt file for each of the images in image_folder_path
+#puts it in prediction_output_path
+#margin is the multiplier for the radius of the circle. this is useful for binerization stuff, because
+#yolo boxes tend to be bigger than the actual colony and hough circles tend to be smaller
+#output_confidence is the confidence written to the .txt file. this is useful for showPrediction stuff 
+#display is a boolean that determines whether or not to display the image with the hough circles
+#display_time is the time in milliseconds that the image is displayed for
+#hough_confidence is the "confidence" threshold for the hough circles
+#PARAM marks something else you can change if shit isn't working 
+def add_hough_circles(image_folder_path, 
+                      prediction_output_path, 
+                      margin = 1, 
+                      output_confidence = ".9", 
+                      display=False, 
+                      display_time=5000,
+                      hough_confidence = 15
+                      ):
+    print("Adding hough circles for folder: " + image_folder_path)
+    for image in os.listdir(image_folder_path):
+        print("Reading image file: " + os.path.join(image_folder_path, image))
+        img = cv2.imread(os.path.join(image_folder_path, image) , cv2.IMREAD_COLOR)
+        if img is None:
+            print("Error: Could not load the image")
+            exit()
+
+        # make image grayscale if needed 
+        if len(img.shape) > 2:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
+        #determine output file name (same as image name)
+        print(os.path.split((os.path.join(image_folder_path, image)))[1])
+        output_file = os.path.join(prediction_output_path, image.split('.')[0] + ".txt") 
+
+        # detect circles
+        blurred = cv2.GaussianBlur(img, (2, 2), 0)          #PARAM
+        edges = cv2.Canny(blurred, 50, 60)                                                                                        ##PARAM
+        circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, dp=1, minDist=20, param1=50, param2=hough_confidence, minRadius=5, maxRadius=30)   ##PARAM
+        
+        #clear contents of output.txt
+        open(output_file, 'w').close()
+
+        #plot circles
+        if circles is not None:
+            circles = np.round(circles[0, :]).astype("int")
+
+        if display:
+            img = cv2.imread(os.path.join(image_folder_path, image) , cv2.IMREAD_COLOR)
+
+        for (x, y, r) in circles:
+            image_width = img.shape[1]
+            image_height = img.shape[0]    
+            with open (output_file, 'a') as f:
+                f.write("0 " + str(x/image_width) + " " + str(y/image_height) + " " + str(r * margin/image_width) +  " " + str(r* margin/image_width) + " " + output_confidence + "\n")
+            
+            if display:               
+                cv2.circle(img, (x, y), (r * margin), (255, 0, 0), 1)
+        if display:
+            img = cv2.resize(img, (640, 640))
+            cv2.imshow('Result', img)
+            cv2.waitKey(display_time)
+            cv2.destroyAllWindows()
+
+        else:
+            print("No hough circles detected")
         # eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=10)
     # very_eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=20)
