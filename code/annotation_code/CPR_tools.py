@@ -155,60 +155,53 @@ def binary_disciminate(img_file_path, x, y, width, height, margin = 1, erosion_t
 #display_time is the time in milliseconds that the image is displayed for
 #hough_confidence is the "confidence" threshold for the hough circles
 #PARAM marks something else you can change if shit isn't working 
-def add_hough_circles(image_folder_path, 
-                      prediction_output_path, 
+def add_hough_circles(image_path, 
+                      prediction_path, 
                       margin = 1, 
                       output_confidence = ".9", 
                       display=False, 
                       display_time=5000,
                       hough_confidence = 15
                       ):
-    print("Adding hough circles for folder: " + image_folder_path)
-    for image in os.listdir(image_folder_path):
-        print("Reading image file: " + os.path.join(image_folder_path, image))
-        img = cv2.imread(os.path.join(image_folder_path, image) , cv2.IMREAD_COLOR)
-        if img is None:
-            print("Error: Could not load the image")
-            exit()
+    img = cv2.imread(os.path.join(image_path) , cv2.IMREAD_COLOR)
+    if img is None:
+        print("Error: Could not load the image")
+        exit()
 
-        # make image grayscale if needed 
-        if len(img.shape) > 2:
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # make image grayscale if needed 
+    if len(img.shape) > 2:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # detect circles
+    blurred = cv2.GaussianBlur(img, (2, 2), 0)          #PARAM
+    edges = cv2.Canny(blurred, 50, 60)                                                                                        ##PARAM
+    circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, dp=1, minDist=20, param1=50, param2=hough_confidence, minRadius=5, maxRadius=30)   ##PARAM
+    
+    #clear contents of output.txt
+    open(prediction_path, 'w').close()
+
+    #plot circles
+    if circles is not None:
+        circles = np.round(circles[0, :]).astype("int")
+
+    if display:
+        img = cv2.imread(os.path.join(image_path) , cv2.IMREAD_COLOR)
+
+    for (x, y, r) in circles:
+        image_width = img.shape[1]
+        image_height = img.shape[0]    
+        with open (prediction_path, 'a') as f:
+            f.write("0 " + str(x/image_width) + " " + str(y/image_height) + " " + str(r * margin/image_width) +  " " + str(r* margin/image_width) + " " + output_confidence + "\n")
         
-        #determine output file name (same as image name)
-        print(os.path.split((os.path.join(image_folder_path, image)))[1])
-        output_file = os.path.join(prediction_output_path, image.split('.')[0] + ".txt") 
+        if display:               
+            cv2.circle(img, (x, y), (r * margin), (255, 0, 0), 1)
+    if display:
+        img = cv2.resize(img, (640, 640))
+        cv2.imshow('Result', img)
+        cv2.waitKey(display_time)
+        cv2.destroyAllWindows()
 
-        # detect circles
-        blurred = cv2.GaussianBlur(img, (2, 2), 0)          #PARAM
-        edges = cv2.Canny(blurred, 50, 60)                                                                                        ##PARAM
-        circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, dp=1, minDist=20, param1=50, param2=hough_confidence, minRadius=5, maxRadius=30)   ##PARAM
-        
-        #clear contents of output.txt
-        open(output_file, 'w').close()
-
-        #plot circles
-        if circles is not None:
-            circles = np.round(circles[0, :]).astype("int")
-
-        if display:
-            img = cv2.imread(os.path.join(image_folder_path, image) , cv2.IMREAD_COLOR)
-
-        for (x, y, r) in circles:
-            image_width = img.shape[1]
-            image_height = img.shape[0]    
-            with open (output_file, 'a') as f:
-                f.write("0 " + str(x/image_width) + " " + str(y/image_height) + " " + str(r * margin/image_width) +  " " + str(r* margin/image_width) + " " + output_confidence + "\n")
-            
-            if display:               
-                cv2.circle(img, (x, y), (r * margin), (255, 0, 0), 1)
-        if display:
-            img = cv2.resize(img, (640, 640))
-            cv2.imshow('Result', img)
-            cv2.waitKey(display_time)
-            cv2.destroyAllWindows()
-
-        else:
-            print("No hough circles detected")
+    else:
+        print("No hough circles detected")
         # eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=10)
     # very_eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=20)
