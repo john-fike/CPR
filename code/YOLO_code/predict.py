@@ -5,16 +5,16 @@ import numpy as np
 import os
 
 folder = './images/realTest_v3/processed'
-
+# folder = './norb_datasets/norb_v2/valid/images'
 # # #load model, find bacteria colonies in all images in folder path. 
 # model = YOLO('AGAR_v2.pt')
 # for image in os.listdir(folder):
 #     model.predict(os.path.join(folder, image), save=True, imgsz=640, save_txt = True, conf = .1, classes = None, save_conf = True, hide_labels = False, hide_conf = False)  # creates 'predictions.jpg'
 
 
-model = YOLO('models/norbert_v3.pt')
+model = YOLO('./models/norb_v3.11.2.pt')
 for image in os.listdir(folder):
-    model.predict(os.path.join(folder, image), conf = .01, save=True, imgsz=640, save_txt = True, classes = None, save_conf = True, hide_labels = False, hide_conf = False)  # creates 'predictions.jpg'
+    model.predict(os.path.join(folder, image), conf = .01, save=True, imgsz=640, save_txt = True, classes = None, save_conf = True, hide_labels = False, hide_conf = False)  
 
 # Name	Type	Default	Description
 # source	str	'ultralytics/assets'	source directory for images or videos

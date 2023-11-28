@@ -1,11 +1,13 @@
 import cv2
 import numpy as np
 import os
-import skimage.morphology as morph
 from scipy.stats import norm
 import matplotlib.pyplot as plt
+
 from tqdm import tqdm
 
+############################################################################################################ --ADD HOUGH CIRCLES--
+#creates a .txt file with coordinates / size of colonies detected by hough circles
 def add_hough_circles(image, prediction_file_path, display=False, display_time=5000):
     if image is None:
         print("Error: Could not load the image")
@@ -56,14 +58,29 @@ def distance(x0, y0, r0=0, x1=.5, y1=.5, r1=0):
     distance = distance - (r0 + r1)
     return (x_dist + y_dist) ** .5
 
+############################################################################################################ --BINARY DISCRIMINATE--
+# Parameters:
+# - img_file_path: Path to the image file.
+# - x: x coordinate of the center of the colony.
+# - y: y coordinate of the center of the colony.
+# - width: Width of the colony.
+# - height: Height of the colony.
+# - margin: Multiplier for the width and height of the colony. This is useful for binerization stuff, because
+#   yolo boxes tend to be bigger than the actual colony and hough circles tend to be smaller.
+# - erosion_thresholds: Tuple of thresholds for each erosion iteration. If the normalized intensity of the binerized image
+#   is above the threshold at any iteration, the colony is bad.
+# - erosion_iterations: Tuple of iterations for each erosion. The number of iterations determines how much the colony is eroded.
+# - original_display: Boolean that determines whether or not to display the original image.
+# - bad_display: Boolean that determines whether or not to display the image if the colony is bad.
+# - good_display: Boolean that determines whether or not to display the image if the colony is good.
+# - display_time: Time in milliseconds that the image is displayed for.
 
-#returns boolean of whether or not the colony is good 
-#if the binerized image has a normalized intensity above 
-# the threshold at any erosion iteration, the colony is bad
+# Returns:
+# - Boolean that determines whether or not the colony is good.
+
 def binary_disciminate(img_file_path, x, y, width, height, margin = 1, erosion_thresholds = (180, 140, 110, 90), erosion_iterations = (0, 1, 2, 3), original_display = False, bad_display = False, good_display=False, display_time = 2000):
 
-    print("binary shit!")
-    # -----------------------------------------------LOAD IMAGE AND PROPERTIES------------------
+     # -----------------------------------------------LOAD IMAGE AND PROPERTIES------------------
     img = cv2.imread(img_file_path)
     # Check if the image was loaded successfully
     if img is None:
@@ -146,16 +163,25 @@ def binary_disciminate(img_file_path, x, y, width, height, margin = 1, erosion_t
                 cv2.waitKey(display_time)
                 cv2.destroyAllWindows()
             return True
-
-#creates a .txt file for each of the images in image_folder_path
+        
+############################################################################################################ --ADD HOUGH CIRCLES--
+#creates a .txt file with coordinates / size of colonies detected by hough circles
+#same format as yolo .txt files, so height and width are both just the radius
 #puts it in prediction_output_path
-#margin is the multiplier for the radius of the circle. this is useful for binerization stuff, because
-#yolo boxes tend to be bigger than the actual colony and hough circles tend to be smaller
-#output_confidence is the confidence written to the .txt file. this is useful for showPrediction stuff 
-#display is a boolean that determines whether or not to display the image with the hough circles
-#display_time is the time in milliseconds that the image is displayed for
-#hough_confidence is the "confidence" threshold for the hough circles
-#PARAM marks something else you can change if shit isn't working 
+
+# Parameters:
+# - image_path: Path to the image file.
+# - prediction_path: Path to the file where the predictions are written.
+# - margin: Multiplier for the radius of the circle. This is useful for binerization stuff, because
+#   yolo boxes tend to be bigger than the actual colony and hough circles tend to be smaller.
+# - output_confidence: The confidence written to the .txt file. This is useful for showPrediction stuff.
+# - display: Boolean that determines whether or not to display the image with the hough circles.
+# - display_time: Time in milliseconds that the image is displayed for.
+# - hough_confidence: The confidence appended to the end of each line in the .txt file 
+
+# Creates:
+# - Text file containing coordinates to all detected colonies.
+
 def add_hough_circles(image_path, 
                       prediction_path, 
                       margin = 1, 
@@ -205,6 +231,8 @@ def add_hough_circles(image_path,
     else:
         print("No hough circles detected")
 
+############################################################################################################ --SHOW COLONIES--
+# Display colonies one by one, up close 
 def showColonies(prediction_file_path, image_path, display_time = 500, margin = 1):
     # -----------------------------------------------LOAD IMAGE AND PROPERTIES------------------
     img = cv2.imread(image_path)
@@ -235,23 +263,52 @@ def showColonies(prediction_file_path, image_path, display_time = 500, margin = 
             cv2.waitKey(display_time)
             cv2.destroyAllWindows()
 
+############################################################################################################ DISCRIMINATE
+# takes in a prediction file and an image file
+# creates two new files: good_colonies.txt and bad_colonies.txt
+# good_colonies.txt contains the predictions that are good
+# bad_colonies.txt contains the predictions that are bad
+# there are myriad selection parameters that can be used to determine whether a colony is good or not
+# the most important is the binary_discriminate function and the min distance parameter
 
-def discriminate(PREDICTION_FILE_PATH, 
+# Parameters:
+# - prediction_file_path: Path to the file containing predictions for all colonies.
+# - image_file_path: Path to the image file.
+# - good_output_path: Path to the file where the predictions for good colonies are written.
+# - bad_output_path: Path to the file where the predictions for bad colonies are written.
+# - min_distance: Minimum distance between two colonies.
+# - min_selection_confidence: Minimum confidence for a colony to be selected.
+# - min_discrimination_confidence: Minimum confidence for a colony to be used for discrimination.
+# - min_size: Minimum size of a colony.
+# - max_size: Maximum size of a colony.
+# - maximum_ratio: Maximum ratio between width and height of a colony.
+# - petri_dish_radius: Radius of the petri dish.
+
+# Creates:
+# - good_colonies.txt: File containing the predictions for good colonies.
+# - bad_colonies.txt: File containing the predictions for bad colonies.
+
+def discriminate(prediction_file_path, 
                  image_file_path,
-                 PISS = 'FUCK',      #do not remove--code will break
-                 GOOD_OUTPUT_PATH = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/good_colonies/',
-                 BAD_OUTPUT_PATH  = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/bad_colonies/',
-                 MIN_DISTANCE = .03,
-                 MIN_SELECTION_CONFIDENCE = 0.14, 
-                 MIN_DISCRIMINATION_CONFIDENCE = .05, 
-                 MIN_SIZE = .01, 
-                 MAX_SIZE = .5, MAXIMUM_RATIO = .15, 
-                 PETRI_DISH_RADIUS = .4,
+                 BLACK = 'MAGIC',      #do not remove--code will break
+                 good_output_path = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/good_colonies/',
+                 bad_output_path  = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/bad_colonies/',
+                 min_distance = .03,
+                 min_selection_confidence = 0.14, 
+                 min_discrimination_confidence = .05, 
+                 min_size = .01, 
+                 max_size = .5, 
+                 maximum_ratio = .15, 
+                 petri_dish_radius = .4,
+                 binary_discrimination_margin = 2,
+                 binary_bad_display = False,
+                 binary_good_display = False,
+                 binary_original_display = False,
                  ):
 
-    base_file_name = os.path.splitext(os.path.basename(PREDICTION_FILE_PATH))[0]
-    good_file_name = os.path.join(str(GOOD_OUTPUT_PATH), base_file_name + '.txt')
-    bad_file_name  = os.path.join(str(BAD_OUTPUT_PATH),  base_file_name + '.txt')
+    base_file_name = os.path.splitext(os.path.basename(prediction_file_path))[0]
+    good_file_name = os.path.join(str(good_output_path), base_file_name + '.txt')
+    bad_file_name  = os.path.join(str(bad_output_path),  base_file_name + '.txt')
     print("Base file name: " , base_file_name)
     print("Good file name: " , good_file_name)
     print("Bad file name: "  , bad_file_name)
@@ -265,7 +322,7 @@ def discriminate(PREDICTION_FILE_PATH,
     with open(bad_file_name, 'w') as bad_file:
         pass
 
-    with open(PREDICTION_FILE_PATH) as predictionFile:
+    with open(prediction_file_path) as predictionFile:
         lines = predictionFile.readlines()
         for main_colony_line in tqdm(lines):
             main_colony   = main_colony_line.split() # [class, x, y, width, height, confidence]
@@ -277,26 +334,29 @@ def discriminate(PREDICTION_FILE_PATH,
             ratio = abs((float(main_colony[4]) / float(main_colony[3])) - 1 ) #ok really this is how not square it is not the ratio but close enough
             
             is_bad_colony = True
-            if(cpr.distance(x0=main_colony_x, y0=main_colony_y) < PETRI_DISH_RADIUS and main_colony_confidence > MIN_SELECTION_CONFIDENCE and 
-               cpr.binary_disciminate(img_file_path=image_file_path, x=main_colony_x, y=main_colony_y, width=main_colony_w,
-                                      height=main_colony_h, original_display=False, bad_display=False, display_time=500, margin=2)
-               ):
+            if(distance(x0=main_colony_x, y0=main_colony_y) < petri_dish_radius and             # discriminate against colonies that are outside / near edge or petri dish 
+               main_colony_confidence > min_selection_confidence and                            # discriminate against colonies that are not confident enough       
+               binary_disciminate(img_file_path=image_file_path, x=main_colony_x, y=main_colony_y, width=main_colony_w,
+                                      height=main_colony_h, original_display=binary_original_display, good_display = binary_good_display, bad_display=binary_bad_display, display_time=500, margin=binary_discrimination_margin)):                    # discriminate against colonies that have too much shit near them
                 is_bad_colony = False
-                for neighbor_colony_line in lines: 
+                #iterate through all of the other colonies and check if there are any that are too close to the colony in question
+                for neighbor_colony_line in lines:                          
                     neighbor_colony = neighbor_colony_line.split()
                     neighbor_colony_x = float(neighbor_colony[1])
                     neighbor_colony_y = float(neighbor_colony[2])
                     neighbor_colony_r = float(neighbor_colony[3])
                     neighbor_colony_confidence = float(neighbor_colony[5])
 
-                    distance_between_colony_centers = cpr.distance(x0=main_colony_x, y0=main_colony_y, r0=main_colony_w, 
-                                                                   x1=neighbor_colony_x, y1=neighbor_colony_y, r1=neighbor_colony_r)
+                    distance_between_colonies = distance(x0=main_colony_x, y0=main_colony_y, r0=main_colony_w, 
+                                                         x1=neighbor_colony_x, y1=neighbor_colony_y, r1=neighbor_colony_r)
 
-                    if (distance_between_colony_centers <  MIN_DISTANCE and          #distance to colony
-                        distance_between_colony_centers != 0.0 and                   #make sure it's not the same colony
-                        neighbor_colony_confidence > MIN_DISCRIMINATION_CONFIDENCE): #make sure the colony prediction is confident enough to be used for discrimination
+                    if (distance_between_colonies <  min_distance and                #distance to colony
+                        distance_between_colonies != 0.0 and                         #make sure it's not the same colony
+                        neighbor_colony_confidence > min_discrimination_confidence): #make sure the colony prediction is confident enough to be used for discrimination
                         is_bad_colony = True
 
+            #write bad colonies to bad_colonies.txt and good colonies to good_colonies.txt
+            #only write the colony if it is not already in the file
             if is_bad_colony:
                 if not bad_colonies.__contains__(main_colony_line):
                     with open(bad_file_name, 'a') as bad_file:
@@ -307,14 +367,29 @@ def discriminate(PREDICTION_FILE_PATH,
                 if not good_colonies.__contains__(main_colony_line):
                     with open(good_file_name, 'a') as good_file:
                         good_file.write(main_colony_line)
-                        lines.remove(main_colony_line)
+                        lines.remove(main_colony_line)              # if the colony is good (for the most part this just means isolated), 
+                                                                    # we do not have to worry about it so we can remove it from the list of lines 
+                                                                    # being used to check if colonies are too close together
+
+    print("Good colonies: " + str(len(good_colonies)))
+    print("Bad colonies: " + str(len(bad_colonies)))
                         
+############################################################################################################ SHOW PREDICTIONS 
+# Display colonies on an image based on prediction files
+
+# Parameters:
+# - good_colony_file_path: Path to the file containing predictions for good colonies. These appear as green circles
+# - bad_colony_file_path: Path to the file containing predictions for bad colonies. These appear as red circles
+# - image_path: Path to the image file.
+# - display_time: Time in milliseconds the image is displayed.
+
 def showPredictions(good_colony_file_path=None, bad_colony_file_path=None, image_path=None, display_time = 2000):
     image = cv2.imread(image_path)
     if image is None:
         print("Error: Could not load the image")
         exit()
-    
+    good_colony_counter = 0
+    bad_colony_counter = 0 
     if good_colony_file_path is not None:
         with open(good_colony_file_path) as good_colony_file:
             good_colonies = good_colony_file.readlines()
@@ -325,6 +400,7 @@ def showPredictions(good_colony_file_path=None, bad_colony_file_path=None, image
                     y = int(float(elements[2]) * image.shape[0])
                     r = int(float(elements[3]) * image.shape[1] / 2)
                     cv2.circle(image, (x, y), r, (0, 255, 0), 1)
+                    good_colony_counter += 1
 
     if bad_colony_file_path is not None:
         with open(bad_colony_file_path) as bad_colony_file:
@@ -336,9 +412,13 @@ def showPredictions(good_colony_file_path=None, bad_colony_file_path=None, image
                     y = int(float(elements[2]) * image.shape[0])
                     r = int(float(elements[3]) * image.shape[1] / 2)
                     cv2.circle(image, (x, y), r, (0, 0, 255), 1)
+                    bad_colony_counter += 1
+
+    # print("Good colonies: " + str(good_colony_counter))
+    # print("Bad colonies: " + str(bad_colony_counter))
     
     image = cv2.resize(image, (640, 640))
     cv2.imshow('image', image)
-    cv2.waitKey(0)
+    cv2.waitKey(display_time)
     cv2.destroyAllWindows()
 

@@ -42,6 +42,7 @@ Code for visualizing and refining YOLO annotations
 ## Models 
 **only one model added because they are big** 
 norbert_v3.pt
+trained using yolov8n.pt
 CURRENTLY IN USE
 Data augmentation steps:
 * 100% greyscale duplicate partition. 60% hue shift, 1000 epoch w/ 50 patience
