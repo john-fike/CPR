@@ -3,8 +3,19 @@ import numpy as np
 import os
 from scipy.stats import norm
 import matplotlib.pyplot as plt
-
 from tqdm import tqdm
+
+
+
+############################################################################################################ --CALCULATE GSD--
+def calculate_gsd(distance=280.0, sensor_width = 6.18, sensor_height = 5.85, focal_length = 3.72):
+    img_width = 3264.0
+    img_height = 2448.0
+    gsd_width = (sensor_width * distance) / (img_width * focal_length)
+    gsd_height = (sensor_height * distance) / (img_height * focal_length)
+    print("GSD width: " + str(gsd_width))
+    print("GSD height: " + str(gsd_height))
+    return (gsd_width, gsd_height)
 
 ############################################################################################################ --ADD HOUGH CIRCLES--
 #creates a .txt file with coordinates / size of colonies detected by hough circles
@@ -57,112 +68,6 @@ def distance(x0, y0, r0=0, x1=.5, y1=.5, r1=0):
     distance = (x_dist + y_dist) ** .5
     distance = distance - (r0 + r1)
     return (x_dist + y_dist) ** .5
-
-############################################################################################################ --BINARY DISCRIMINATE--
-# Parameters:
-# - img_file_path: Path to the image file.
-# - x: x coordinate of the center of the colony.
-# - y: y coordinate of the center of the colony.
-# - width: Width of the colony.
-# - height: Height of the colony.
-# - margin: Multiplier for the width and height of the colony. This is useful for binerization stuff, because
-#   yolo boxes tend to be bigger than the actual colony and hough circles tend to be smaller.
-# - erosion_thresholds: Tuple of thresholds for each erosion iteration. If the normalized intensity of the binerized image
-#   is above the threshold at any iteration, the colony is bad.
-# - erosion_iterations: Tuple of iterations for each erosion. The number of iterations determines how much the colony is eroded.
-# - original_display: Boolean that determines whether or not to display the original image.
-# - bad_display: Boolean that determines whether or not to display the image if the colony is bad.
-# - good_display: Boolean that determines whether or not to display the image if the colony is good.
-# - display_time: Time in milliseconds that the image is displayed for.
-
-# Returns:
-# - Boolean that determines whether or not the colony is good.
-
-def binary_disciminate(img_file_path, x, y, width, height, margin = 1, erosion_thresholds = (180, 140, 110, 90), erosion_iterations = (0, 1, 2, 3), original_display = False, bad_display = False, good_display=False, display_time = 2000):
-
-     # -----------------------------------------------LOAD IMAGE AND PROPERTIES------------------
-    img = cv2.imread(img_file_path)
-    # Check if the image was loaded successfully
-    if img is None:
-        print("Error: Could not read image file")
-        exit()
-    
-    img_width = img.shape[1]
-    img_height = img.shape[0]
-    x = img_width * x
-    y = img_height * y
-    width = img_width * width * margin
-    height = img_height * height * margin
-
-    # -----------------------------------------------CROP & GRAY---------------------------------
-    cropped_image = img[int(y-height) : int(y+height) , int(x-width) : int(x+width)]
-    if cropped_image is None:
-        print("Error: Could not crop image")
-        exit()
-
-    if len(cropped_image.shape) > 2:
-        gray_cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
-    else:
-        gray_cropped_image = cropped_image
-
-    # -----------------------------------------------THRESHOLD BINERIZATION----------------------
-    hist = cv2.calcHist([gray_cropped_image], [0], None, [256], [0, 256])
-    hist = hist.ravel()
-    z = np.linspace(0, 255, 256)
-    param = norm.fit(z, loc=np.mean(hist), scale=np.std(hist))
-    mean, std_dev = param
-    k = .5 
-    threshold = int(mean - k * std_dev)
-    binary_image = cv2.threshold(gray_cropped_image, threshold, 255, cv2.THRESH_BINARY)[1]
-    binary_image = cv2.bitwise_not(binary_image)                                                #invert                                 
-    
-    if original_display:
-        title = "Original"
-        display_image = cv2.resize(cropped_image, (640, 640))
-        cv2.imshow(title, display_image)
-        cv2.waitKey(display_time)
-
-    # -----------------------------------------------EROSION----------------------
-    for l in range(len(erosion_iterations)):
-        iterations = erosion_iterations[l]
-        erosion_threshold = erosion_thresholds[l]
-        eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=iterations)
-        binary_image_sum = np.sum(eroded_binary_image)          #sum of all pixels in the image
-        binary_image_sum = binary_image_sum / (width * height)  #normalize
-        if original_display:            
-            title = "Erosion iteration: " + str(iterations) + " Normalized intensity: " + str(int(binary_image_sum)) + " Threshold: " + str(erosion_threshold)
-            display_image = cv2.resize(eroded_binary_image, (640, 640))
-            cv2.imshow(title, display_image)
-            cv2.waitKey(display_time)
-            cv2.destroyAllWindows()
-
-        if binary_image_sum > erosion_threshold:
-            print("Colony exceed threshold at erosion iteration: " + str(iterations) + " Normalized intensity: " + str(int(binary_image_sum)) + " Threshold: " + str(erosion_threshold))
-            if(bad_display):
-                cv2.circle(img, (int(x), int(y)), int(width/margin), (0, 0, 255), 1)
-                img = cv2.resize(img, (640, 640))
-                cv2.imshow("Violating Colony", img)
-                cv2.waitKey(display_time)
-                cv2.destroyAllWindows()
-                display_image = cv2.resize(eroded_binary_image, (640, 640))
-                cv2.imshow("BAD Colony", display_image)
-                cv2.waitKey(display_time)
-                cv2.destroyAllWindows()
-            return False
-        
-        else:
-            print("Colony passed threshold at erosion iteration: " + str(iterations) + " Normalized intensity: " + str(int(binary_image_sum)) + " Threshold: " + str(erosion_threshold))
-            if(good_display):
-                cv2.circle(img, (int(x), int(y)), int(width/margin), (0, 0, 255), 1)
-                img = cv2.resize(img, (640, 640))
-                cv2.imshow("GOOD Colony", img)
-                cv2.waitKey(display_time)
-                cv2.destroyAllWindows()
-                display_image = cv2.resize(eroded_binary_image, (640, 640))
-                cv2.imshow("GOOD Colony", display_image)
-                cv2.waitKey(display_time)
-                cv2.destroyAllWindows()
-            return True
         
 ############################################################################################################ --ADD HOUGH CIRCLES--
 #creates a .txt file with coordinates / size of colonies detected by hough circles
@@ -231,37 +136,128 @@ def add_hough_circles(image_path,
     else:
         print("No hough circles detected")
 
-############################################################################################################ --SHOW COLONIES--
-# Display colonies one by one, up close 
-def showColonies(prediction_file_path, image_path, display_time = 500, margin = 1):
-    # -----------------------------------------------LOAD IMAGE AND PROPERTIES------------------
-    img = cv2.imread(image_path)
+############################################################################################################ --BINARY DISCRIMINATE--
+# Parameters:
+# - img_file_path: Path to the image file.
+# - x: x coordinate of the center of the colony.
+# - y: y coordinate of the center of the colony.
+# - width: Width of the colony.
+# - height: Height of the colony.
+# - margin: Multiplier for the width and height of the colony. This is useful for binerization stuff, because
+#   yolo boxes tend to be bigger than the actual colony and hough circles tend to be smaller.
+# - erosion_thresholds: Tuple of thresholds for each erosion iteration. If the normalized intensity of the binerized image
+#   is above the threshold at any iteration, the colony is bad.
+# - erosion_iterations: Tuple of iterations for each erosion. The number of iterations determines how much the colony is eroded.
+# - original_display: Boolean that determines whether or not to display the original image.
+# - bad_display: Boolean that determines whether or not to display the image if the colony is bad.
+# - good_display: Boolean that determines whether or not to display the image if the colony is good.
+# - display_time: Time in milliseconds that the image is displayed for.
+
+# Returns:
+# - Boolean that determines whether or not the colony is good.
+
+def binary_disciminate(img_file_path, x, y, width, height, margin = .5, erosion_thresholds = (170, 160, 100, 80), erosion_iterations = (0, 1, 2, 3), original_display = False, bad_display = False, good_display=False, display_time = 2000, save_folder_path = None):
+
+     # -----------------------------------------------LOAD IMAGE AND PROPERTIES------------------
+    img = cv2.imread(img_file_path)
     # Check if the image was loaded successfully
     if img is None:
         print("Error: Could not read image file")
         exit()
+    
     img_width = img.shape[1]
     img_height = img.shape[0]
+    x = img_width * x
+    y = img_height * y
+    width = img_width * width * margin
+    height = img_height * height * margin
 
-    with open(prediction_file_path) as file:
-        colony_lines = file.readlines()
-        for colony_line in colony_lines:
-            elements = colony_line.split()
-            x = int(float(elements[1]) * img_width)
-            y = int(float(elements[2]) * img_height)
-            w = int(float(elements[3]) * img_width * margin)
-            h = int(float(elements[4]) * img_height * margin)
+    # -----------------------------------------------CROP & GRAY---------------------------------
+    cropped_image = img[int(y-height) : int(y+height) , int(x-width) : int(x+width)]
+    if cropped_image is None:
+        print("Error: Could not crop image")
+        exit()
 
-            # -----------------------------------------------CROP & GRAY---------------------------------
-            cropped_img = img[int(y-h) : int(y+h) , int(x-w) : int(x+w)]
-            if cropped_img is None:
-                print("Error: Could not crop image")
-                exit()
-            
-            display_img = cv2.resize(cropped_img, (640, 640))  
-            cv2.imshow('Colony', display_img)
+    if len(cropped_image.shape) > 2:
+        gray_cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray_cropped_image = cropped_image
+
+    # -----------------------------------------------THRESHOLD BINERIZATION----------------------
+    hist = cv2.calcHist([gray_cropped_image], [0], None, [256], [0, 256])
+    hist = hist.ravel()
+    z = np.linspace(0, 255, 256)
+    param = norm.fit(z, loc=np.mean(hist), scale=np.std(hist))
+    mean, std_dev = param
+    k = .5 
+    threshold = int(mean - k * std_dev)
+    binary_image = cv2.threshold(gray_cropped_image, threshold, 255, cv2.THRESH_BINARY)[1]
+    binary_image = cv2.bitwise_not(binary_image)                                                #invert                                 
+
+    
+    if original_display:
+        title = "Original"
+        display_image = cv2.resize(cropped_image, (640, 640))
+        cv2.imshow(title, display_image)
+        cv2.waitKey(display_time)
+
+    # -----------------------------------------------EROSION----------------------
+    for l in range(len(erosion_iterations)):
+        iterations = erosion_iterations[l]
+        erosion_threshold = erosion_thresholds[l]
+        eroded_binary_image = cv2.erode(binary_image, np.ones((2,2), np.uint8), iterations=iterations)
+        binary_image_sum = np.sum(eroded_binary_image)          #sum of all pixels in the image
+        binary_image_sum = binary_image_sum / (width * height)  #normalize
+        if original_display:            
+            title = "Erosion iteration: " + str(iterations) + " Normalized intensity: " + str(int(binary_image_sum)) + " Threshold: " + str(erosion_threshold)
+            display_image = cv2.resize(eroded_binary_image, (640, 640))
+            cv2.imshow(title, display_image)
             cv2.waitKey(display_time)
             cv2.destroyAllWindows()
+
+        if binary_image_sum > erosion_threshold:
+            # print("Colony exceed threshold at erosion iteration: " + str(iterations) + " Normalized intensity: " + str(int(binary_image_sum)) + " Threshold: " + str(erosion_threshold))
+            title = " BAD ITR: " + str(iterations) + " INT: " + str(int(binary_image_sum)) + " TSH: " + str(erosion_threshold)
+
+            if(bad_display):
+                cv2.circle(img, (int(x), int(y)), int(width/margin), (0, 0, 255), 1)
+                img = cv2.resize(img, (640, 640))
+                cv2.imshow(title, img)
+                cv2.waitKey(display_time)
+                cv2.destroyAllWindows()
+                display_image = cv2.resize(eroded_binary_image, (640, 640))
+                cv2.imshow("BAD Colony", display_image)
+                cv2.waitKey(display_time)
+                cv2.destroyAllWindows()
+
+            if save_folder_path is not None:
+                file_name = os.path.splitext(os.path.basename(img_file_path))[0]
+                save_path = os.path.join(save_folder_path, "/bad_colonies/")
+                print("saving to: " + save_path)
+                cv2.imwrite(save_path, cv2.resize(eroded_binary_image, (640, 640)))
+            return False
+        
+        else:
+            # print("Colony passed threshold at erosion iteration: " + str(iterations) + " Normalized intensity: " + str(int(binary_image_sum)) + " Threshold: " + str(erosion_threshold))
+            title = "GOOD ITR: " + str(iterations) + " INT: " + str(int(binary_image_sum)) + " TSH: " + str(erosion_threshold)
+
+            if(good_display):
+                cv2.circle(img, (int(x), int(y)), int(width/margin), (0, 0, 255), 1)
+                img = cv2.resize(img, (640, 640))
+                cv2.imshow(title, img)
+                cv2.waitKey(display_time)
+                cv2.destroyAllWindows()
+                display_image = cv2.resize(eroded_binary_image, (640, 640))
+                cv2.imshow("GOOD Colony", display_image)
+                cv2.waitKey(display_time)
+                cv2.destroyAllWindows()
+
+            if save_folder_path is not None:
+                file_name = os.path.splitext(os.path.basename(img_file_path))[0]
+                save_path = os.path.join(save_folder_path, "/good_colonies/")
+                print("saving to: " + save_path)
+                cv2.imwrite(save_path, cv2.resize(eroded_binary_image, (640, 640)))
+            return True
 
 ############################################################################################################ DISCRIMINATE
 # takes in a prediction file and an image file
@@ -304,75 +300,78 @@ def discriminate(prediction_file_path,
                  binary_bad_display = False,
                  binary_good_display = False,
                  binary_original_display = False,
+                 display_time = 1000,
+                 binary_save_folder_path = None
                  ):
+    try:
+        base_file_name = os.path.splitext(os.path.basename(prediction_file_path))[0]
+        good_file_name = os.path.join(str(good_output_path), base_file_name + '.txt')
+        bad_file_name  = os.path.join(str(bad_output_path),  base_file_name + '.txt')
+        print("Base file name: " , base_file_name)
+        print("Good file name: " , good_file_name)
+        print("Bad file name: "  , bad_file_name)
 
-    base_file_name = os.path.splitext(os.path.basename(prediction_file_path))[0]
-    good_file_name = os.path.join(str(good_output_path), base_file_name + '.txt')
-    bad_file_name  = os.path.join(str(bad_output_path),  base_file_name + '.txt')
-    print("Base file name: " , base_file_name)
-    print("Good file name: " , good_file_name)
-    print("Bad file name: "  , bad_file_name)
+        good_colonies = []
+        bad_colonies = []
 
-    good_colonies = []
-    bad_colonies = []
+        #clear files
+        with open(good_file_name, 'w') as good_file:
+            pass
+        with open(bad_file_name, 'w') as bad_file:
+            pass
 
-    #clear files
-    with open(good_file_name, 'w') as good_file:
+        with open(prediction_file_path) as predictionFile:
+            lines = predictionFile.readlines()
+            for main_colony_line in tqdm(lines):
+                main_colony   = main_colony_line.split() # [class, x, y, width, height, confidence]
+                main_colony_x = float(main_colony[1])
+                main_colony_y = float(main_colony[2])
+                main_colony_w = float(main_colony[3])
+                main_colony_h = float(main_colony[4])
+                main_colony_confidence = float(main_colony[5])
+                ratio = abs((float(main_colony[4]) / float(main_colony[3])) - 1 ) #ok really this is how not square it is not the ratio but close enough
+                
+                is_bad_colony = True
+                if(distance(x0=main_colony_x, y0=main_colony_y) < petri_dish_radius and             # discriminate against colonies that are outside / near edge or petri dish 
+                main_colony_confidence > min_selection_confidence and                            # discriminate against colonies that are not confident enough       
+                binary_disciminate(img_file_path=image_file_path, x=main_colony_x, y=main_colony_y, width=main_colony_w,
+                                        height=main_colony_h, original_display=binary_original_display, good_display = binary_good_display, bad_display=binary_bad_display, display_time=display_time, margin=binary_discrimination_margin, save_folder_path=binary_save_folder_path)):                    # discriminate against colonies that have too much shit near them
+                    is_bad_colony = False
+                    #iterate through all of the other colonies and check if there are any that are too close to the colony in question
+                    for neighbor_colony_line in lines:                          
+                        neighbor_colony = neighbor_colony_line.split()
+                        neighbor_colony_x = float(neighbor_colony[1])
+                        neighbor_colony_y = float(neighbor_colony[2])
+                        neighbor_colony_r = float(neighbor_colony[3])
+                        neighbor_colony_confidence = float(neighbor_colony[5])
+
+                        distance_between_colonies = distance(x0=main_colony_x, y0=main_colony_y, r0=main_colony_w, 
+                                                            x1=neighbor_colony_x, y1=neighbor_colony_y, r1=neighbor_colony_r)
+
+                        if (distance_between_colonies <  min_distance and                #distance to colony
+                            distance_between_colonies != 0.0 and                         #make sure it's not the same colony
+                            neighbor_colony_confidence > min_discrimination_confidence): #make sure the colony prediction is confident enough to be used for discrimination
+                            is_bad_colony = True
+
+                #write bad colonies to bad_colonies.txt and good colonies to good_colonies.txt
+                #only write the colony if it is not already in the file
+                if is_bad_colony:
+                    if not bad_colonies.__contains__(main_colony_line):
+                        with open(bad_file_name, 'a') as bad_file:
+                            bad_file.write(main_colony_line)
+                            bad_colonies.append(main_colony_line)
+
+                else:
+                    if not good_colonies.__contains__(main_colony_line):
+                        with open(good_file_name, 'a') as good_file:
+                            good_file.write(main_colony_line)
+                            lines.remove(main_colony_line)              # if the colony is good (for the most part this just means isolated), 
+                                                                        # we do not have to worry about it so we can remove it from the list of lines 
+                                                                        # being used to check if colonies are too close together
+
+    except Exception as e:
+        print("An error occured while discriminating + " + str(e))
         pass
-    with open(bad_file_name, 'w') as bad_file:
-        pass
-
-    with open(prediction_file_path) as predictionFile:
-        lines = predictionFile.readlines()
-        for main_colony_line in tqdm(lines):
-            main_colony   = main_colony_line.split() # [class, x, y, width, height, confidence]
-            main_colony_x = float(main_colony[1])
-            main_colony_y = float(main_colony[2])
-            main_colony_w = float(main_colony[3])
-            main_colony_h = float(main_colony[4])
-            main_colony_confidence = float(main_colony[5])
-            ratio = abs((float(main_colony[4]) / float(main_colony[3])) - 1 ) #ok really this is how not square it is not the ratio but close enough
-            
-            is_bad_colony = True
-            if(distance(x0=main_colony_x, y0=main_colony_y) < petri_dish_radius and             # discriminate against colonies that are outside / near edge or petri dish 
-               main_colony_confidence > min_selection_confidence and                            # discriminate against colonies that are not confident enough       
-               binary_disciminate(img_file_path=image_file_path, x=main_colony_x, y=main_colony_y, width=main_colony_w,
-                                      height=main_colony_h, original_display=binary_original_display, good_display = binary_good_display, bad_display=binary_bad_display, display_time=500, margin=binary_discrimination_margin)):                    # discriminate against colonies that have too much shit near them
-                is_bad_colony = False
-                #iterate through all of the other colonies and check if there are any that are too close to the colony in question
-                for neighbor_colony_line in lines:                          
-                    neighbor_colony = neighbor_colony_line.split()
-                    neighbor_colony_x = float(neighbor_colony[1])
-                    neighbor_colony_y = float(neighbor_colony[2])
-                    neighbor_colony_r = float(neighbor_colony[3])
-                    neighbor_colony_confidence = float(neighbor_colony[5])
-
-                    distance_between_colonies = distance(x0=main_colony_x, y0=main_colony_y, r0=main_colony_w, 
-                                                         x1=neighbor_colony_x, y1=neighbor_colony_y, r1=neighbor_colony_r)
-
-                    if (distance_between_colonies <  min_distance and                #distance to colony
-                        distance_between_colonies != 0.0 and                         #make sure it's not the same colony
-                        neighbor_colony_confidence > min_discrimination_confidence): #make sure the colony prediction is confident enough to be used for discrimination
-                        is_bad_colony = True
-
-            #write bad colonies to bad_colonies.txt and good colonies to good_colonies.txt
-            #only write the colony if it is not already in the file
-            if is_bad_colony:
-                if not bad_colonies.__contains__(main_colony_line):
-                    with open(bad_file_name, 'a') as bad_file:
-                        bad_file.write(main_colony_line)
-                        bad_colonies.append(main_colony_line)
-
-            else:
-                if not good_colonies.__contains__(main_colony_line):
-                    with open(good_file_name, 'a') as good_file:
-                        good_file.write(main_colony_line)
-                        lines.remove(main_colony_line)              # if the colony is good (for the most part this just means isolated), 
-                                                                    # we do not have to worry about it so we can remove it from the list of lines 
-                                                                    # being used to check if colonies are too close together
-
-    print("Good colonies: " + str(len(good_colonies)))
-    print("Bad colonies: " + str(len(bad_colonies)))
                         
 ############################################################################################################ SHOW PREDICTIONS 
 # Display colonies on an image based on prediction files
@@ -390,6 +389,11 @@ def showPredictions(good_colony_file_path=None, bad_colony_file_path=None, image
         exit()
     good_colony_counter = 0
     bad_colony_counter = 0 
+    # GSD height: 0.179
+    # GSD width: 0.142
+    box_width = int(.4/.142)
+    box_height = int(.4/.179)
+
     if good_colony_file_path is not None:
         with open(good_colony_file_path) as good_colony_file:
             good_colonies = good_colony_file.readlines()
@@ -400,7 +404,8 @@ def showPredictions(good_colony_file_path=None, bad_colony_file_path=None, image
                     y = int(float(elements[2]) * image.shape[0])
                     r = int(float(elements[3]) * image.shape[1] / 2)
                     cv2.circle(image, (x, y), r, (0, 255, 0), 1)
-                    good_colony_counter += 1
+                    cv2.rectangle(image, (int(x - box_width/2), int(y - box_height/2)), (int(x + box_width/2), int(y + box_height/2)), (0, 0, 255), 1)
+            good_colony_counter = len(good_colonies) 
 
     if bad_colony_file_path is not None:
         with open(bad_colony_file_path) as bad_colony_file:
@@ -412,13 +417,58 @@ def showPredictions(good_colony_file_path=None, bad_colony_file_path=None, image
                     y = int(float(elements[2]) * image.shape[0])
                     r = int(float(elements[3]) * image.shape[1] / 2)
                     cv2.circle(image, (x, y), r, (0, 0, 255), 1)
-                    bad_colony_counter += 1
+                    cv2.rectangle(image, (int(x - box_width/2), int(y - box_height/2)), (int(x + box_width/2), int(y + box_height/2)), (0, 0, 255), 1)
+            bad_colony_counter = len(bad_colonies)
 
-    # print("Good colonies: " + str(good_colony_counter))
-    # print("Bad colonies: " + str(bad_colony_counter))
+    print("Good colonies: " + str(good_colony_counter))
+    print("Bad colonies: " + str(bad_colony_counter))
     
     image = cv2.resize(image, (640, 640))
     cv2.imshow('image', image)
     cv2.waitKey(display_time)
     cv2.destroyAllWindows()
 
+
+############################################################################################################ --SHOW COLONIES--
+# Display colonies one by one, up close 
+def showColonies(prediction_file_path, image_path, display_time = 500, margin = 1):
+    try:
+        # -----------------------------------------------LOAD IMAGE AND PROPERTIES------------------
+        img = cv2.imread(image_path)
+        # Check if the image was loaded successfully
+        if img is None:
+            print("Error: Could not read image file")
+            exit()
+        img_width = img.shape[1]
+        img_height = img.shape[0]
+
+        with open(prediction_file_path) as file:
+            colony_lines = file.readlines()
+            for colony_line in colony_lines:
+                elements = colony_line.split()
+                x = int(float(elements[1]) * img_width)
+                y = int(float(elements[2]) * img_height)
+                w = int(float(elements[3]) * img_width * margin)
+                h = int(float(elements[4]) * img_height * margin)
+
+                # -----------------------------------------------CROP & GRAY---------------------------------
+                cropped_img = img[int(y-h) : int(y+h) , int(x-w) : int(x+w)]
+                if cropped_img is None:
+                    print("Error: Could not crop image")
+                    exit()
+                
+                box_width = int(.4/.142)
+                box_height = int(.4/.179)
+
+                #draw box with box_width and box_height
+                cv2.rectangle(img, (int(x - box_width/2), int(y - box_height/2)), (int(x + box_width/2), int(y + box_height/2)), (0, 0, 255), 1)
+                cv2.circle(img, (x, y), 1, (0, 0, 255), 1)
+                # cv2.circle(img, (x, y), int(.03 * img_width / 2), (0, 255, 0), 1) 
+                
+                display_img = cv2.resize(cropped_img, (640, 640))  
+                cv2.imshow('Colony', display_img)
+                cv2.waitKey(display_time)
+                cv2.destroyAllWindows()
+    except Exception as e:
+        print("An error occured while showing colonies + " + str(e))
+        pass
