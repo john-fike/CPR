@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Load the image in grayscale
-image = cv2.imread('your_image.jpg', cv2.IMREAD_GRAYSCALE)
+image = cv2.imread('C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/chekcerboard.jpg', cv2.IMREAD_GRAYSCALE)
 
 # Check if the image is loaded successfully
 if image is not None:
@@ -30,6 +30,7 @@ if image is not None:
     cv2.imshow('Modified Image', modified_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    cv2.imwrite('C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/chekcerboard_modified.jpg', modified_image)
 
 else:
     print('Image not loaded.')

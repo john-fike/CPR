@@ -12,9 +12,9 @@ folder = './images/realTest_v3/processed'
 #     model.predict(os.path.join(folder, image), save=True, imgsz=640, save_txt = True, conf = .1, classes = None, save_conf = True, hide_labels = False, hide_conf = False)  # creates 'predictions.jpg'
 
 
-model = YOLO('./models/norbert_v3.pt')
+model = YOLO('./models/norb_v3.11.2.pt')
 for image in os.listdir(folder):
-    model.predict(os.path.join(folder, image), conf = .21, save=True, imgsz=640, save_txt = True, classes = None, save_conf = True, hide_labels = False, hide_conf = False)  
+    model.predict(os.path.join(folder, image), conf = .02, save=True, imgsz=640, save_txt = True, classes = None, save_conf = True, hide_labels = False, hide_conf = False)  
 
 # Name	Type	Default	Description
 # source	str	'ultralytics/assets'	source directory for images or videos
