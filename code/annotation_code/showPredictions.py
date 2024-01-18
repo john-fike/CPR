@@ -21,31 +21,33 @@ if __name__ == "__main__":
     good_colony_folder_path = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/good_colonies/'
     bad_colony_folder_path = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/bad_colonies/'
     
-    # binary_save_folder_path = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/binary/'
-    binary_save_folder_path = None
+    binary_save_folder_path = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/binary/'
+    # binary_save_folder_path = None
 
     predictions_save_folder_path = 'C:/Users/John Fike/OneDrive/Documents/Visual Studio 2022/CPR/output/predictions/'
     # predictions_save_folder_path = None
 
     display_time = 1000
 
-    for image in os.listdir(display_image_folder_path):
-        # find image name,
-        file_name = os.path.splitext(os.path.basename(image))[0]
-        # find prediction file path
-        prediction_file_path = os.path.join(prediction_folder_path, file_name + '.txt')
-        image_file_path = os.path.join(display_image_folder_path, image)
+    # for image in os.listdir(display_image_folder_path):
 
-        good_colony_file_path = os.path.join(good_colony_folder_path, file_name + '.txt')
-        bad_colony_file_path =  os.path.join(bad_colony_folder_path, file_name + '.txt')
+    image = os.listdir(display_image_folder_path)[0]        #!!!!!!!!!TEST!!!!!!!!!
+    # find image name,
+    file_name = os.path.splitext(os.path.basename(image))[0]
+    # find prediction file path
+    prediction_file_path = os.path.join(prediction_folder_path, file_name + '.txt')
+    image_file_path = os.path.join(display_image_folder_path, image)
 
-        cpr.discriminate(prediction_file_path, image_file_path, binary_bad_display=False, binary_good_display=False, display_time=3030, binary_discrimination_margin = 1, good_output_path=good_colony_folder_path, bad_output_path=bad_colony_folder_path, binary_save_folder_path=binary_save_folder_path)
-        cpr.showPredictions(good_colony_file_path= good_colony_file_path,  
-                            bad_colony_file_path=bad_colony_file_path,
-                            image_path=image_file_path,
-                            display_time=1,
-                            save_folder_path=predictions_save_folder_path)
-        cpr.showColonies(good_colony_file_path, image_file_path, display_time=1000, margin=2)
+    good_colony_file_path = os.path.join(good_colony_folder_path, file_name + '.txt')
+    bad_colony_file_path =  os.path.join(bad_colony_folder_path, file_name + '.txt')
+
+    cpr.discriminate(prediction_file_path, image_file_path, binary_bad_display=False, binary_good_display=False, display_time=3030, binary_discrimination_margin = 1, good_output_path=good_colony_folder_path, bad_output_path=bad_colony_folder_path, binary_save_folder_path=binary_save_folder_path)
+    # cpr.showPredictions(good_colony_file_path= good_colony_file_path,  
+    #                     bad_colony_file_path=bad_colony_file_path,
+    #                     image_path=image_file_path,
+    #                     display_time=1,
+    #                     save_folder_path=predictions_save_folder_path)
+    # cpr.showColonies(good_colony_file_path, image_file_path, display_time=10, margin=2)
 
 
     # if binary_save_folder_path is not None:

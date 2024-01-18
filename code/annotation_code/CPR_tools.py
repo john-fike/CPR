@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+import random
 from scipy.stats import norm
 
 def calculate_avg_x_y(img_file_path, margin = .5):
@@ -58,7 +59,6 @@ def calculate_avg_x_y(img_file_path, margin = .5):
 
     print("Average Column Position: ", average_column_position, "Average Word Position: ", average_row_position)
 
-    
     
 ############################################################################################################ --CALCULATE GSD--
 def calculate_gsd(distance=280.0, sensor_width = 6.18, sensor_height = 5.85, focal_length = 4.99):
@@ -208,6 +208,7 @@ def add_hough_circles(image_path,
 # - Boolean that determines whether or not the colony is good.
 
 def binary_disciminate(img_file_path, x, y, width, height, margin = .5, erosion_thresholds = (40, 35, 999, 25), erosion_iterations = (0, 1, 2, 3), original_display = False, bad_display = False, good_display=False, display_time = 2000, save_folder_path = None):
+    print(save_folder_path)
 
      # -----------------------------------------------LOAD IMAGE AND PROPERTIES------------------
     img = cv2.imread(img_file_path)
@@ -240,7 +241,7 @@ def binary_disciminate(img_file_path, x, y, width, height, margin = .5, erosion_
     z = np.linspace(0, 255, 256)
     param = norm.fit(z, loc=np.mean(hist), scale=np.std(hist))
     mean, std_dev = param
-    k = .7 
+    k = .5 
     threshold = int(mean - k * std_dev)
     binary_image = cv2.threshold(gray_cropped_image, threshold, 255, cv2.THRESH_BINARY)[1]
     binary_image = cv2.bitwise_not(binary_image)                                                #invert                                 
@@ -269,9 +270,13 @@ def binary_disciminate(img_file_path, x, y, width, height, margin = .5, erosion_
     average_row_position = np.dot(row_positions, row_sums) / (total_row_sum * width * 2)
     average_column_position = np.dot(column_positions, column_sums) / (total_column_sum * height * 2)
 
-    print("Average Column Position: ", average_column_position, "Average Word Position: ", average_row_position)
+    print("Average Column Position: ", average_column_position, "Average Row Position: ", average_row_position)
+
 
     # -----------------------------------------------EROSION----------------------
+
+    random_lil_fucker = "R-" + str(random.randint(1, 1000)) + "-"
+    print(random_lil_fucker)
     for l in range(len(erosion_iterations)):
         iterations = erosion_iterations[l]
         erosion_threshold = erosion_thresholds[l]
@@ -291,53 +296,65 @@ def binary_disciminate(img_file_path, x, y, width, height, margin = .5, erosion_
             # print("Colony exceed threshold at erosion iteration: " + str(iterations) + " Normalized intensity: " + str(int(binary_image_sum)) + " Threshold: " + str(erosion_threshold))
             title = " BAD ITR: " + str(iterations) + " INT: " + str(int(binary_image_sum)) + " TSH: " + str(erosion_threshold)
 
-            if(bad_display):
-                cv2.circle(img, (int(x), int(y)), int(width/margin), (0, 0, 255), 1)
-                img = cv2.resize(img, (640, 640))
-                cv2.imshow(title, img)
-                cv2.waitKey(display_time)
-                cv2.destroyAllWindows()
-                display_image = cv2.resize(eroded_binary_image, (640, 640))
-                cv2.imshow(title, display_image)
-                cv2.waitKey(display_time)
-                cv2.destroyAllWindows()
+            # if(bad_display):
+            #     cv2.circle(img, (int(x), int(y)), int(width/margin), (0, 0, 255), 1)
+            #     img = cv2.resize(img, (640, 640))
+            #     cv2.imshow(title, img)
+            #     cv2.waitKey(display_time)
+            #     cv2.destroyAllWindows()
+            #     display_image = cv2.resize(eroded_binary_image, (640, 640))
+            #     cv2.imshow(title, display_image)
+            #     cv2.waitKey(display_time)
+            #     cv2.destroyAllWindows()
 
-            if save_folder_path is not None:
-                file_name = os.path.splitext(os.path.basename(img_file_path))[0]
-                save_path = os.path.join(save_folder_path, "/bad_colonies/")
-                print("saving to: " + save_path)
-                cv2.imwrite(save_path, display_image)
-                cv2.waitKey(10)
-            return False
+            # if save_folder_path is not None:
+            #     file_name = os.path.splitext(os.path.basename(img_file_path))[0]
+            #     save_path = os.path.join(save_folder_path, "/bad_colonies/")
+            #     print("saving bad colony to: " + save_path)
+            #     cv2.imwrite(save_path, display_image)
+            #     cv2.waitKey(10)
+            # return False
         
         else:
-            title = "GOOD_ITR_" + str(iterations) + "_INT_" + str(int(binary_image_sum)) + "_TSH_" + str(erosion_threshold)
+            title = random_lil_fucker + "GOOD_ITR_" + str(iterations) + "_INT_" + str(int(binary_image_sum)) + "_TSH_" + str(erosion_threshold) + "_col_" + str(average_column_position) + "_row_" + str(average_row_position) #random shit is for testing
 
+            #draw circles around colonies and show (binary_good_display in discriminate())
+            #show binary image 
             if(good_display):
                 cv2.circle(img, (int(x), int(y)), int(width/margin), (0, 0, 255), 1)
                 img = cv2.resize(img, (640, 640))
-                cv2.imshow(title, img)
+                cv2.imshow(title, img)                      #show image of petri dish
                 cv2.waitKey(display_time)
                 cv2.destroyAllWindows()
                 display_image = cv2.resize(eroded_binary_image, (640, 640))
-                cv2.imshow(title, display_image)
+                cv2.imshow(title, display_image)            #show eroded image 
                 cv2.waitKey(display_time)
                 cv2.destroyAllWindows()
 
+            # save binarized and original colony to binary save path
             if save_folder_path is not None:
-                display_image = cv2.resize(eroded_binary_image, (640, 640))
-                file_name = os.path.splitext(os.path.basename(img_file_path))[0]
-                save_path = os.path.join(save_folder_path, "good_colonies", file_name + "_" + title + ".jpg")
                 if not os.path.exists(os.path.join(save_folder_path, "good_colonies")):
                     os.makedirs(os.path.join(save_folder_path, "good_colonies"))
-                print("saving to: " + save_path)
-                cv2.imwrite(save_path, display_image)
-                orig_save_path = os.path.join(save_folder_path, "good_colonies", "original" + file_name + ".jpg")
-                cropped_save_path = os.path.join(save_folder_path, "good_colonies", "cropped" + file_name + ".jpg")
-                cv2.imwrite(orig_save_path, img)
+                save_path = os.path.join(save_folder_path, "good_colonies")
+
+                eroded_binary_image = cv2.resize(eroded_binary_image, (640, 640))
+                file_name = os.path.splitext(os.path.basename(img_file_path))[0]
+                binary_save_path = os.path.join(save_path, file_name + "_" + title + ".jpg")
+                cropped_save_path = os.path.join(save_path, random_lil_fucker + "cropped" + file_name + ".jpg")
+
+                # print("saving cropped good colony to: " + cropped_save_path)
+                # print("svaing binary good colony to: " + binary_save_path)
+                cv2.imwrite(binary_save_path, eroded_binary_image)
                 cv2.imwrite(cropped_save_path, cropped_image)
                 cv2.waitKey(10)
 
+    # if save_folder_path is not None:
+    #     orig_save_path = os.path.join(save_folder_path, "original" + file_name + ".jpg")
+    #     cv2.imwrite(orig_save_path, img)
+        
+
+
+    cv2.waitKey(100)
     return True
 
 ############################################################################################################ DISCRIMINATE
@@ -411,7 +428,7 @@ def discriminate(prediction_file_path,
                 main_colony_h = float(main_colony[4])
                 main_colony_confidence = float(main_colony[5])
                 ratio = abs((float(main_colony[4]) / float(main_colony[3])) - 1 ) #ok really this is how not square it is not the ratio but close enough
-                
+                 
                 is_bad_colony = True
                 if(distance(x0=main_colony_x, y0=main_colony_y) < petri_dish_radius and             # discriminate against colonies that are outside / near edge or petri dish 
                    main_colony_confidence > min_selection_confidence and                            # discriminate against colonies that are not confident enough       
@@ -509,6 +526,7 @@ def showPredictions(good_colony_file_path=None, bad_colony_file_path=None, image
     cv2.imshow('image', image)
     cv2.waitKey(display_time)
     cv2.destroyAllWindows()
+
 
     if save_folder_path is not None:
         file_name = os.path.splitext(os.path.basename(image_path))[0]
