@@ -4,6 +4,11 @@ import os
 import random
 from scipy.stats import norm
 
+
+from ultralytics import YOLO
+from ultralytics.models.sam import Predictor as SAMPredictor 
+from PIL import Image
+
 def calculate_avg_x_y(img_file_path, margin = .5):
      # -----------------------------------------------LOAD IMAGE AND PROPERTIES------------------
     img = cv2.imread(img_file_path)
@@ -59,14 +64,30 @@ def calculate_avg_x_y(img_file_path, margin = .5):
 
     print("Average Column Position: ", average_column_position, "Average Word Position: ", average_row_position)
 
-    
-############################################################################################################ --CALCULATE GSD--
-def calculate_gsd(distance=280.0, sensor_width = 6.18, sensor_height = 5.85, focal_length = 4.99):
-    img_width = 3264.0
-    img_height = 2448.0
-    gsd_width = (sensor_width * distance) / (img_width * focal_length)
-    gsd_height = (sensor_height * distance) / (img_height * focal_length)
-    return (gsd_width, gsd_height)
+
+def resize_images(image_folder_path):
+    # resize all images in image_folder_path
+    for image in os.listdir(image_folder_path):
+        img = cv2.imread(os.path.join(image_folder_path, image), cv2.IMREAD_GRAYSCALE)
+        img = cv2.resize(img, (640, 640))
+        cv2.imwrite(os.path.join(image_folder_path, 'processed', image), img)
+
+def process_petri_dish_image(image_folder_path, good_colony_coord_output_path = None, minimum_colony_distance = None, model_sensitivity = 0.02):
+
+    resize_images(image_folder_path)
+    resized_image_folder_path = os.path.join(image_folder_path, 'processed')
+
+    # run model on all images in image_folder_path
+    # IMPORTANT: This saves the predictions to a .txt file to runs/detect/predict/labels
+    model = YOLO('./models/norb_v3.11.2.pt')
+    for image in os.listdir(resized_image_folder_path):
+        model.predict(os.path.join(resized_image_folder_path,image), conf = .02, save=True, imgsz=640, save_txt = True, classes = None, save_conf = True, hide_labels = False, hide_conf = False)  
+
+
+
+    return 0
+
+
 
 ############################################################################################################ --ADD HOUGH CIRCLES--
 #creates a .txt file with coordinates / size of colonies detected by hough circles
@@ -207,7 +228,7 @@ def add_hough_circles(image_path,
 # Returns:
 # - Boolean that determines whether or not the colony is good.
 
-def binary_disciminate(img_file_path, x, y, width, height, margin = .5, erosion_thresholds = (40, 35, 999, 25), erosion_iterations = (0, 1, 2, 3), original_display = False, bad_display = False, good_display=False, display_time = 2000, save_folder_path = None):
+def binary_disciminate(img_file_path, x, y, width, height, margin = .5, erosion_thresholds = (999, 999, 999, 999), erosion_iterations = (0, 1, 2, 3), original_display = False, bad_display = False, good_display=False, display_time = 2000, save_folder_path = None):
     print(save_folder_path)
 
      # -----------------------------------------------LOAD IMAGE AND PROPERTIES------------------
@@ -270,6 +291,12 @@ def binary_disciminate(img_file_path, x, y, width, height, margin = .5, erosion_
     average_row_position = np.dot(row_positions, row_sums) / (total_row_sum * width * 2)
     average_column_position = np.dot(column_positions, column_sums) / (total_column_sum * height * 2)
 
+    MAX_ROW_OFFSET = .1
+    MAX_COLUMN_OFFSET = .1
+
+    row_offset = abs(MAX_ROW_OFFSET - average_row_position)
+    column_offset = abs(MAX_COLUMN_OFFSET - average_column_position)
+
     print("Average Column Position: ", average_column_position, "Average Row Position: ", average_row_position)
 
 
@@ -291,6 +318,8 @@ def binary_disciminate(img_file_path, x, y, width, height, margin = .5, erosion_
             cv2.imshow(title, display_image)
             cv2.waitKey(display_time)
             cv2.destroyAllWindows()
+
+        # if first iteration, use average row and col offset to return false if psat
 
         if binary_image_sum > erosion_threshold:
             # print("Colony exceed threshold at erosion iteration: " + str(iterations) + " Normalized intensity: " + str(int(binary_image_sum)) + " Threshold: " + str(erosion_threshold))
@@ -480,7 +509,7 @@ def discriminate(prediction_file_path,
 # - image_path: Path to the image file.
 # - display_time: Time in milliseconds the image is displayed.
 
-def showPredictions(good_colony_file_path=None, bad_colony_file_path=None, image_path=None, display_time = 2000, save_folder_path = None):
+def showPredictions(good_colony_file_path=None, bad_colony_file_path=None, image_path=None, display_image=False, display_time = 2000, save_folder_path = None):
     image = cv2.imread(image_path)
     if image is None:
         print("Error: Could not load the image")
@@ -523,9 +552,10 @@ def showPredictions(good_colony_file_path=None, bad_colony_file_path=None, image
     print("Bad colonies: " + str(bad_colony_counter))
     
     image = cv2.resize(image, (640, 640))
-    cv2.imshow('image', image)
-    cv2.waitKey(display_time)
-    cv2.destroyAllWindows()
+    if display_image:
+        cv2.imshow('image', image)
+        cv2.waitKey(display_time)
+        cv2.destroyAllWindows()
 
 
     if save_folder_path is not None:
@@ -564,7 +594,6 @@ def showColonies(prediction_file_path, image_path, display_time = 500, margin = 
                     print("Error: Could not crop image")
                     exit()
                 
-                calculate_gsd()
                 box_width = int(1/.106)
                 box_height = int(1/.134)
 
